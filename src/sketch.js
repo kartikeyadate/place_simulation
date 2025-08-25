@@ -22,7 +22,7 @@ let running = true
 let stopButton
 
 let personCountP
-let spawnRateSlider
+let busynessSlider
 let currentSpawnRateP
 let showHeatMap = true
 let heatMapCheckBox
@@ -71,12 +71,12 @@ function setup () {
   personCountP = createP(`Total persons: 0`)
   personCountP.position(20, img.height + 60)
 
-  currentSpawnRateP = createP('Current spawn rate: 0')
+  currentSpawnRateP = createP('Arrivals/min (derived): 0')
   currentSpawnRateP.position(20, img.height + 80)
 
-  spawnRateSlider = createSlider(1, 500, 50, 1)
-  spawnRateSlider.position(width - 350, img.height + 25)
-  spawnRateSlider.style('width', '200px')
+  busynessSlider = createSlider(0.5, 2.0, 1.0, 0.01)
+  busynessSlider.position(width - 350, img.height + 25)
+  busynessSlider.style('width', '200px')
 
   spaceManager.setupEnvironment()
   peopleManager.initAgents(5)
@@ -112,8 +112,15 @@ function draw () {
   coordsPara.html(`Mouse is at (` + mouseX + `, ` + mouseY + `)`)
   frPara.html('Frame rate is ' + frameRate().toFixed(1) + ' frames per second')
   personCountP.html(`Total persons: ${peopleManager.persons.length}`)
+
+  // Show derived arrivals per minute (at current busyness)
+  const baseLambda = peopleManager.deriveSpawnRate()
+  const busy = busynessSlider?.value ? busynessSlider.value() : 1.0
+  const arrivalsPerMin = baseLambda * busy * 60
   currentSpawnRateP.html(
-    `Current spawn rate: One person every ${spawnRateSlider.value()} frames`
+    `Arrivals/min (derived): ${arrivalsPerMin.toFixed(
+      2
+    )} — Busyness ×${busy.toFixed(2)}`
   )
 }
 

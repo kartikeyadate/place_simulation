@@ -28,7 +28,14 @@ class SpaceManager {
       .fill(null)
       .map(() => Array(this.img.height).fill(null))
 
-    this.walkableColors = this.locationsData.walkable || []
+    this.walkableColors = []
+    for (let [key, cfg] of Object.entries(this.locationsData)) {
+      //if key is a number and represents a walkable location
+      if (/^\d+$/.test(key) && cfg && cfg.walkable === true) {
+        this.walkableColors.push(key.toString())
+      }
+    }
+
     for (let i = 0; i < this.img.width; i++) {
       for (let j = 0; j < this.img.height; j++) {
         let c = this.img.get(i, j)
@@ -45,39 +52,39 @@ class SpaceManager {
   }
 
   populate_entries_and_subgoals () {
-    const entryData = this.locationsData['entries']
-    for (const entry of entryData) {
-      const [key, val] = Object.entries(entry)[0]
-      const [x, y, w, h] = val
-      let name = key.split('_')[1]
-      const entryLoc = new Location(name, key, 'pixel')
-      entryLoc.populatePixelsbyDims(
-        x,
-        y,
-        w,
-        h,
-        this.walkableColors,
-        this.locationGrid
-      )
-      entryLoc.calculateCentroid()
-      entryLoc.selectWeightedWaypoint()
-      this.entryLocations.push(entryLoc)
-      this.entryLocationList.push(entryLoc.name)
+    // 1) Entries: keys that start with "entry_"
+    for (const [key, cfg] of Object.entries(this.locationsData)) {
+      if (key.startsWith('entry_') && cfg && Array.isArray(cfg.rect)) {
+        const entryLoc = new Location(cfg.name || key, key, 'entry', cfg)
+        entryLoc.populateFromRect(this.locationGrid, this.walkableColors)
+        // pick a centroid-weighted waypoint within the rect
+        entryLoc.calculateCentroid()
+        entryLoc.selectWeightedWaypoint()
+        this.entryLocations.push(entryLoc)
+        this.entryLocationList.push(entryLoc.name)
+      }
     }
 
-    for (let key in this.locationsData) {
-      if (key >= 105 && key <= 118) {
-        let id = key
-        let name = `loc_${key}`
-        const subGoalLoc = new Location(name, id, 'pixel')
-        subGoalLoc.populatePixels(this.locationGrid)
-        subGoalLoc.calculateCentroid()
-        subGoalLoc.selectWeightedWaypoint()
-        this.subGoalLocations.push(subGoalLoc)
-        this.subGoalLocationList.push(subGoalLoc.name)
-        this.locationList.push(subGoalLoc)
-        this.locationGraph.addNode(subGoalLoc)
-        this.targetLocationList.push(subGoalLoc.name)
+    // 2) Sub-goal locations: numeric keys in your chosen range (keep your 105..118 rule)
+    for (const [key, cfg] of Object.entries(this.locationsData)) {
+      if (/^\d+$/.test(key)) {
+        const kNum = Number(key)
+        if (kNum >= 105 && kNum <= 118) {
+          const subGoalLoc = new Location(
+            cfg.name || `loc_${key}`,
+            key,
+            'pixel',
+            cfg
+          )
+          subGoalLoc.populatePixels(this.locationGrid)
+          subGoalLoc.calculateCentroid()
+          subGoalLoc.selectWeightedWaypoint()
+          this.subGoalLocations.push(subGoalLoc)
+          this.subGoalLocationList.push(subGoalLoc.name)
+          this.locationList.push(subGoalLoc)
+          this.locationGraph.addNode(subGoalLoc)
+          this.targetLocationList.push(subGoalLoc.name)
+        }
       }
     }
   }
@@ -262,7 +269,7 @@ class SpaceManager {
 }
 
 class Location {
-  constructor (name, id, type, waypoint = null) {
+  constructor (name, id, type, config, waypoint = null) {
     this.name = name
     this.id = id
     this.type = type
@@ -270,6 +277,32 @@ class Location {
     this.waypoint = waypoint
     this.centroid = null
     this.pixelSet = {}
+    if (config && config.traffic) {
+      this.traffic = config.traffic
+      this.wait = config.wait
+    } else {
+      this.traffic = 0
+      this.wait = null
+    }
+
+    if (config && config.rect) {
+      this.rect = config.rect
+    }
+  }
+
+  populateFromRect (locationGrid, walkable) {
+    if (this.type === 'entry' && this.rect) {
+      const [x, y, w, h] = this.rect
+      for (let i = x; i < x + w; i++) {
+        for (let j = y; j < y + h; j++) {
+          let c = locationGrid[i][j]
+          if (!walkable || walkable.includes(c.toString())) {
+            this.pixels.push(createVector(i, j))
+          }
+        }
+      }
+      this.pixelSet = new Set(this.pixels.map(p => `${p.x},${p.y}`))
+    }
   }
 
   populatePixels (locationGrid) {

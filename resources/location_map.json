@@ -62,17 +62,17 @@
     "115": {
         "name": "Shop A zone",
         "walkable": true,
-        "traffic": 12,
+        "traffic": 22,
         "wait": {
             "type": "time",
-            "min": 10,
-            "max": 60
+            "min": 8,
+            "max": 45
         }
     },
     "117": {
         "name": "Shop C zone",
         "walkable": true,
-        "traffic": 12,
+        "traffic": 10,
         "wait": {
             "type": "time",
             "min": 10,
@@ -82,27 +82,27 @@
     "118": {
         "name": "Shop D zone",
         "walkable": true,
-        "traffic": 12,
+        "traffic": 8,
         "wait": {
             "type": "time",
-            "min": 10,
-            "max": 60
+            "min": 15,
+            "max": 90
         }
     },
     "114": {
         "name": "Shop D zone",
         "walkable": true,
-        "traffic": 12,
+        "traffic": 30,
         "wait": {
             "type": "time",
-            "min": 10,
-            "max": 60
+            "min": 20,
+            "max": 100
         }
     },
     "113": {
         "name": "Shop F zone",
         "walkable": true,
-        "traffic": 15,
+        "traffic": 60,
         "wait": {
             "type": "time",
             "min": 10,
@@ -112,7 +112,7 @@
     "112": {
         "name": "Shop G zone",
         "walkable": true,
-        "traffic": 15,
+        "traffic": 40,
         "wait": {
             "type": "time",
             "min": 10,
@@ -132,7 +132,7 @@
     "110": {
         "name": "Kiosk A zone",
         "walkable": true,
-        "traffic": 10,
+        "traffic": 20,
         "wait": {
             "type": "time",
             "min": 10,
@@ -142,7 +142,7 @@
     "109": {
         "name": "Kiosk B zone",
         "walkable": true,
-        "traffic": 10,
+        "traffic": 20,
         "wait": {
             "type": "time",
             "min": 10,
@@ -152,7 +152,7 @@
     "108": {
         "name": "Kiosk C zone",
         "walkable": true,
-        "traffic": 10,
+        "traffic": 20,
         "wait": {
             "type": "time",
             "min": 10,
@@ -162,7 +162,7 @@
     "107": {
         "name": "Kiosk D zone",
         "walkable": true,
-        "traffic": 10,
+        "traffic": 20,
         "wait": {
             "type": "time",
             "min": 10,
@@ -173,8 +173,9 @@
         "name": "Bus Stop",
         "walkable": false,
         "wait": {
-            "type": "event",
-            "until": "busArrives"
+            "type": "time",
+            "min": 8,
+            "max": 25
         }
     },
     "255": {
@@ -183,48 +184,67 @@
     },
     "153": {
         "name": "Road",
-        "walkable": true
+        "walkable": true,
+        "wait": null
     },
-    "entries": [
-        {
-            "entry_one": [
-                30,
-                100,
-                70,
-                70
-            ]
-        },
-        {
-            "entry_two": [
-                200,
-                10,
-                100,
-                50
-            ]
-        },
-        {
-            "entry_three": [
-                840,
-                100,
-                60,
-                60
-            ]
-        },
-        {
-            "entry_four": [
-                250,
-                500,
-                100,
-                35
-            ]
-        },
-        {
-            "entry_five": [
-                870,
-                385,
-                50,
-                100
-            ]
-        }
-    ]
+    "entry_one": {
+        "name": "entry_one",
+        "walkable": true,
+        "traffic": 30,
+        "wait": null,
+        "rect": [
+            30,
+            100,
+            70,
+            70
+        ]
+    },
+    "entry_two": {
+        "name": "entry_two",
+        "walkable": true,
+        "traffic": 30,
+        "wait": null,
+        "rect": [
+            200,
+            10,
+            100,
+            50
+        ]
+    },
+    "entry_three": {
+        "name": "entry_three",
+        "walkable": true,
+        "traffic": 30,
+        "wait": null,
+        "rect": [
+            840,
+            100,
+            60,
+            60
+        ]
+    },
+    "entry_four": {
+        "name": "entry_four",
+        "walkable": true,
+        "traffic": 30,
+        "wait": null,
+        "rect": [
+            250,
+            500,
+            100,
+            35
+        ]
+    },
+    "entry_five": {
+        "name": "entry_five",
+        "walkable": true,
+        "traffic": 10,
+        "wait": null,
+        "rect": [
+            870,
+            385,
+            50,
+            100
+        ]
+    }
 }
