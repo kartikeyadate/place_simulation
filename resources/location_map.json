@@ -1,50 +1,190 @@
 {
-    "183": "Yard",
-    "230": "Shop A",
-    "232": "Shop B",
-    "234": "Shop C",
-    "236": "Shop D",
-    "228": "Shop E",
-    "226": "Shop F",
-    "224": "Shop G",
-    "222": "Shop H",
-    "220": "Kiosk A",
-    "218": "Kiosk B",
-    "216": "Kiosk C",
-    "214": "Kiosk D",
-    "212": "Bus Stop",
-    "208": "circular",
-    "115": "Shop A zone",
-    "117": "Shop C zone",
-    "118": "Shop D zone",
-    "114": "Shop E zone",
-    "113": "Shop F zone",
-    "112": "Shop G zone",
-    "111": "Shop H zone",
-    "110": "Kiosk A zone",
-    "109": "Kiosk B zone",
-    "108": "Kiosk C zone",
-    "107": "Kiosk D zone",
-    "106": "Bus Stop zone",
-    "255": "Column",
-    "153": "Road",
-    "walkable": [
-        "183",
-        "106",
-        "107",
-        "108",
-        "109",
-        "110",
-        "111",
-        "112",
-        "113",
-        "114",
-        "115",
-        "116",
-        "117",
-        "118",
-        "153"
-    ],
+    "183": {
+        "name": "Yard",
+        "walkable": true
+    },
+    "230": {
+        "name": "Shop A",
+        "walkable": false
+    },
+    "232": {
+        "name": "Shop B",
+        "walkable": false
+    },
+    "234": {
+        "name": "Shop C",
+        "walkable": false
+    },
+    "236": {
+        "name": "Shop D",
+        "walkable": false
+    },
+    "228": {
+        "name": "Shop E",
+        "walkable": false
+    },
+    "226": {
+        "name": "Shop F",
+        "walkable": false
+    },
+    "224": {
+        "name": "Shop G",
+        "walkable": false
+    },
+    "222": {
+        "name": "Shop H",
+        "walkable": false
+    },
+    "220": {
+        "name": "Kiosk A",
+        "walkable": false
+    },
+    "218": {
+        "name": "Kiosk B",
+        "walkable": false
+    },
+    "216": {
+        "name": "Kiosk C",
+        "walkable": false
+    },
+    "214": {
+        "name": "Kiosk D",
+        "walkable": false
+    },
+    "212": {
+        "name": "Bus Stop",
+        "walkable": false
+    },
+    "208": {
+        "name": "circular",
+        "walkable": false
+    },
+    "115": {
+        "name": "Shop A zone",
+        "walkable": true,
+        "traffic": 12,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 60
+        }
+    },
+    "117": {
+        "name": "Shop C zone",
+        "walkable": true,
+        "traffic": 12,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 60
+        }
+    },
+    "118": {
+        "name": "Shop D zone",
+        "walkable": true,
+        "traffic": 12,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 60
+        }
+    },
+    "114": {
+        "name": "Shop D zone",
+        "walkable": true,
+        "traffic": 12,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 60
+        }
+    },
+    "113": {
+        "name": "Shop F zone",
+        "walkable": true,
+        "traffic": 15,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 60
+        }
+    },
+    "112": {
+        "name": "Shop G zone",
+        "walkable": true,
+        "traffic": 15,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 60
+        }
+    },
+    "111": {
+        "name": "Shop H zone",
+        "walkable": true,
+        "traffic": 15,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 60
+        }
+    },
+    "110": {
+        "name": "Kiosk A zone",
+        "walkable": true,
+        "traffic": 10,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 100
+        }
+    },
+    "109": {
+        "name": "Kiosk B zone",
+        "walkable": true,
+        "traffic": 10,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 100
+        }
+    },
+    "108": {
+        "name": "Kiosk C zone",
+        "walkable": true,
+        "traffic": 10,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 100
+        }
+    },
+    "107": {
+        "name": "Kiosk D zone",
+        "walkable": true,
+        "traffic": 10,
+        "wait": {
+            "type": "time",
+            "min": 10,
+            "max": 100
+        }
+    },
+    "106": {
+        "name": "Bus Stop",
+        "walkable": false,
+        "wait": {
+            "type": "event",
+            "until": "busArrives"
+        }
+    },
+    "255": {
+        "name": "Column",
+        "walkable": false
+    },
+    "153": {
+        "name": "Road",
+        "walkable": true
+    },
     "entries": [
         {
             "entry_one": [

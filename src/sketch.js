@@ -18,6 +18,8 @@ let maxAgents = 40
 let tempwp = null
 let makingwp = false
 let diagnosticGrid
+let running = true
+let stopButton
 
 let personCountP
 let spawnRateSlider
@@ -29,7 +31,7 @@ let heatMapCheckBox
 // p5 lifecycle
 // --------------------
 function preload () {
-  img = loadImage('resources/plan_alt.png')
+  img = loadImage('resources/plan_alt_1.png')
   locations = loadJSON('resources/location_map.json')
 }
 
@@ -45,6 +47,12 @@ function setup () {
   let simulateBtn = createButton('Simulate')
   simulateBtn.position(width - 50, img.height + 25)
   simulateBtn.mousePressed(() => setMode(SIMULATE))
+
+  stopButton = createButton('Pause Simulation')
+  stopButton.position(width / 3, img.height + 25)
+  stopButton.mousePressed(() => {
+    toggleSimulation()
+  })
 
   coordsPara = createP(`Mouse is at (0,0)`)
   coordsPara.position(20, img.height + 20)
@@ -91,7 +99,10 @@ function draw () {
   }
 
   if (currentMode === SIMULATE) {
-    peopleManager.run()
+    if (running) {
+      peopleManager.run()
+    }
+
     peopleManager.show()
   } else if (currentMode === SETUP) {
     spaceManager.showWaypoints()
@@ -104,4 +115,17 @@ function draw () {
   currentSpawnRateP.html(
     `Current spawn rate: One person every ${spawnRateSlider.value()} frames`
   )
+}
+
+function toggleSimulation () {
+  if (running) {
+    console.log('Simulation paused.')
+    noLoop()
+    stopButton.html('Resume Simulation')
+  } else {
+    console.log('Simulation resumed.')
+    loop()
+    stopButton.html('Pause Simulation')
+  }
+  running = !running
 }
