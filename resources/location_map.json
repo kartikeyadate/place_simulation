@@ -1,0 +1,90 @@
+{
+    "183": "Yard",
+    "230": "Shop A",
+    "232": "Shop B",
+    "234": "Shop C",
+    "236": "Shop D",
+    "228": "Shop E",
+    "226": "Shop F",
+    "224": "Shop G",
+    "222": "Shop H",
+    "220": "Kiosk A",
+    "218": "Kiosk B",
+    "216": "Kiosk C",
+    "214": "Kiosk D",
+    "212": "Bus Stop",
+    "208": "circular",
+    "115": "Shop A zone",
+    "117": "Shop C zone",
+    "118": "Shop D zone",
+    "114": "Shop E zone",
+    "113": "Shop F zone",
+    "112": "Shop G zone",
+    "111": "Shop H zone",
+    "110": "Kiosk A zone",
+    "109": "Kiosk B zone",
+    "108": "Kiosk C zone",
+    "107": "Kiosk D zone",
+    "106": "Bus Stop zone",
+    "255": "Column",
+    "153": "Road",
+    "walkable": [
+        "183",
+        "106",
+        "107",
+        "108",
+        "109",
+        "110",
+        "111",
+        "112",
+        "113",
+        "114",
+        "115",
+        "116",
+        "117",
+        "118",
+        "153"
+    ],
+    "entries": [
+        {
+            "entry_one": [
+                30,
+                100,
+                70,
+                70
+            ]
+        },
+        {
+            "entry_two": [
+                200,
+                10,
+                100,
+                50
+            ]
+        },
+        {
+            "entry_three": [
+                840,
+                100,
+                60,
+                60
+            ]
+        },
+        {
+            "entry_four": [
+                250,
+                500,
+                100,
+                35
+            ]
+        },
+        {
+            "entry_five": [
+                870,
+                385,
+                50,
+                100
+            ]
+        }
+    ]
+}
