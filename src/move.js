@@ -137,7 +137,7 @@ class Move {
       avoidStatic: 3.5,
       avoidDynamic: 3.0,
       bounds: 1.0,
-      wander: 0.5
+      wander: 0.05
     }
 
     let seekForce = this.seek(this.targetWaypoint, this.isMovingToFinalTarget)
