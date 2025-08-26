@@ -91,6 +91,7 @@
     },
     "114": {
         "name": "Shop D zone",
+        "_comment": "'Traffic' refers to the number of seconds between two people arriving at this location, on average.",
         "walkable": true,
         "traffic": 30,
         "wait": {
@@ -131,6 +132,7 @@
     },
     "110": {
         "name": "Kiosk A zone",
+        "_comment": "'Traffic' refers to the number of seconds between two people arriving at this location, on average.",
         "walkable": true,
         "traffic": 20,
         "wait": {
