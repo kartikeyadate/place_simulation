@@ -30,8 +30,12 @@ class SpaceManager {
 
     this.walkableColors = []
     for (let [key, cfg] of Object.entries(this.locationsData)) {
-      //if key is a number and represents a walkable location
+      // Numeric walkable zones
       if (/^\d+$/.test(key) && cfg && cfg.walkable === true) {
+        this.walkableColors.push(key.toString())
+      }
+      // Entries should also be considered walkable
+      if (key.startsWith('entry_') && cfg && cfg.walkable === true) {
         this.walkableColors.push(key.toString())
       }
     }
@@ -163,9 +167,36 @@ class SpaceManager {
     }
 
     // Convert centroids to waypoint Locations
+
     for (let i = 0; i < this.centroids.length; i++) {
       let locName = `voronoi_wp_${i}`
-      let loc = new Location(locName, i, 'waypoint', null, this.centroids[i])
+
+      let cx = Math.round(this.centroids[i].x)
+      let cy = Math.round(this.centroids[i].y)
+
+      // Build a 9x9 patch around the centroid
+      let patch = []
+      for (let dx = -4; dx <= 4; dx++) {
+        for (let dy = -4; dy <= 4; dy++) {
+          let px = cx + dx
+          let py = cy + dy
+          if (
+            px >= 0 &&
+            px < this.locationGrid.length &&
+            py >= 0 &&
+            py < this.locationGrid[0].length
+          ) {
+            patch.push(createVector(px, py))
+          }
+        }
+      }
+
+      // Pick a valid walkable pixel from patch
+      let valid = patch.filter(p => !this.isObstacle(p.x, p.y))
+      let chosen = valid.length > 0 ? random(valid) : createVector(cx, cy)
+
+      // Create Location with snapped waypoint
+      let loc = new Location(locName, i, 'waypoint', null, chosen)
       this.locationList.push(loc)
       this.locationGraph.addNode(loc)
       this.targetLocationList.push(locName)
@@ -246,28 +277,42 @@ class SpaceManager {
           if (check_y >= 0 && check_y < this.locationGrid[check_x].length) {
             let colorValue = this.locationGrid[check_x][check_y]
             if (this.walkableColors.includes(colorValue.toString())) {
-              return false
+              return false // at least one neighbor is walkable
             }
           }
         }
       }
     }
-    return true
+    return true // otherwise obstacle
   }
 
   visibilityTest (a, b) {
-    // a, b are p5.Vector
-    let steps = int(p5.Vector.dist(a, b))
-    if (steps === 0) return true
+    let dist = p5.Vector.dist(a, b)
+    let steps = int(dist) // one step per pixel along the line
+
     for (let i = 0; i <= steps; i++) {
       let t = i / steps
       let x = lerp(a.x, b.x, t)
       let y = lerp(a.y, b.y, t)
+
       if (this.isObstacle(x, y)) {
         return false
       }
     }
     return true
+  }
+
+  snapToNearestWalkable (position) {
+    let nearest = null
+    let bestDist = Infinity
+    for (let p of this.walkableSet) {
+      let d = p5.Vector.dist(position, p)
+      if (d < bestDist) {
+        bestDist = d
+        nearest = p
+      }
+    }
+    return nearest ? nearest.copy() : position
   }
 }
 
@@ -341,16 +386,36 @@ class Location {
       (this.type === 'pixel' || this.type === 'entry') &&
       this.pixels.length > 0
     ) {
+      // Arithmetic centroid
       let xSum = 0
       let ySum = 0
       for (let pixel of this.pixels) {
         xSum += pixel.x
         ySum += pixel.y
       }
-      this.centroid = createVector(
-        xSum / this.pixels.length,
-        ySum / this.pixels.length
-      )
+      let cx = Math.round(xSum / this.pixels.length)
+      let cy = Math.round(ySum / this.pixels.length)
+
+      // Build a 9x9 patch around centroid
+      let patch = []
+      for (let dx = -4; dx <= 4; dx++) {
+        for (let dy = -4; dy <= 4; dy++) {
+          let px = cx + dx
+          let py = cy + dy
+          if (
+            px >= 0 &&
+            px < spaceManager.locationGrid.length &&
+            py >= 0 &&
+            py < spaceManager.locationGrid[0].length
+          ) {
+            patch.push(createVector(px, py))
+          }
+        }
+      }
+
+      // Pick a valid walkable pixel from patch
+      let valid = patch.filter(p => !spaceManager.isObstacle(p.x, p.y))
+      this.centroid = valid.length > 0 ? random(valid) : createVector(cx, cy)
     }
   }
 
@@ -366,14 +431,41 @@ class Location {
       (this.type === 'pixel' || this.type === 'entry') &&
       this.pixels.length > 0
     ) {
+      // Sort pixels by closeness to centroid (as before)
       let sortedPixels = this.pixels.sort((a, b) => {
         let dA = p5.Vector.dist(a, this.centroid)
         let dB = p5.Vector.dist(b, this.centroid)
         return dA - dB
       })
+
+      // Pick a biased pixel near centroid
       let randomIndex = floor(random() * random() * sortedPixels.length)
       let randomPixel = sortedPixels[randomIndex]
-      this.waypoint = createVector(randomPixel.x, randomPixel.y)
+
+      // Build a 9x9 patch around that chosen pixel
+      let cx = Math.round(randomPixel.x)
+      let cy = Math.round(randomPixel.y)
+      let patch = []
+      for (let dx = -4; dx <= 4; dx++) {
+        for (let dy = -4; dy <= 4; dy++) {
+          let px = cx + dx
+          let py = cy + dy
+          if (
+            px >= 0 &&
+            px < spaceManager.locationGrid.length &&
+            py >= 0 &&
+            py < spaceManager.locationGrid[0].length
+          ) {
+            patch.push(createVector(px, py))
+          }
+        }
+      }
+
+      // Pick a valid walkable pixel from patch
+      let valid = patch.filter(p => !spaceManager.isObstacle(p.x, p.y))
+      let chosen = valid.length > 0 ? random(valid) : createVector(cx, cy)
+
+      this.waypoint = chosen
     }
   }
 

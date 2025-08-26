@@ -40,6 +40,8 @@ function setup () {
   let canvas = createCanvas(img.width, img.height)
   canvas.position(20, 20)
 
+  // /* uncomment this for part 5 of the howto.
+
   let setupBtn = createButton('Setup')
   setupBtn.position(width - 110, img.height + 25)
   setupBtn.mousePressed(() => setMode(SETUP))
@@ -54,11 +56,14 @@ function setup () {
     toggleSimulation()
   })
 
+  // uncomment this for part 5 of the howto */
+
   coordsPara = createP(`Mouse is at (0,0)`)
   coordsPara.position(20, img.height + 20)
   frPara = createP('Frame rate is 0')
   frPara.position(20, img.height + 40)
 
+  // /*uncomment this for part 5 of the howto
   heatMapCheckBox = createCheckbox('Show Heatmap', true)
   heatMapCheckBox.position(width / 2, img.height + 20)
   heatMapCheckBox.changed(() => {
@@ -84,6 +89,8 @@ function setup () {
   diagnosticGrid = new Grid(pixelsPerMeter)
 
   setMode(SETUP)
+
+  // uncomment this for part 5 of the howto */
 }
 
 function draw () {
@@ -93,6 +100,8 @@ function draw () {
   translate(panX, panY)
   scale(zoom)
   image(img, 0, 0)
+
+  // /* uncomment this for part 5 of the howto.
   diagnosticGrid.update(peopleManager.persons)
   if (showHeatMap) {
     diagnosticGrid.showDensities()
@@ -109,8 +118,12 @@ function draw () {
   }
   pop()
 
+  // uncomment this for part 5 of the howto. */
+
   coordsPara.html(`Mouse is at (` + mouseX + `, ` + mouseY + `)`)
   frPara.html('Frame rate is ' + frameRate().toFixed(1) + ' frames per second')
+
+  // /* uncomment this for part 5 of the howto
   personCountP.html(`Total persons: ${peopleManager.persons.length}`)
 
   // Show derived arrivals per minute (at current busyness)
@@ -122,6 +135,7 @@ function draw () {
       2
     )} — Busyness ×${busy.toFixed(2)}`
   )
+  // uncomment this for part 5 of the howto */
 }
 
 function toggleSimulation () {

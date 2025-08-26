@@ -1,0 +1,68 @@
+This file contains a list of instructions for initializing your own design in this simulation system.
+
+1. Before you do anything in the simulation, create two files:
+   a. An image file (png, jpeg etc.) which shows a figure-ground plan of your proposed design (or part of it). The 'figure' represents the non-walkable areas, and the 'ground' represents the walkable areas. Each walkable and non-walkable area should be designated by a different color (grayscale, any number from 0-255).
+2. Each space in your design should be designated as one of the following:
+   a. A non-walkable, contiguous space.
+   "224": {
+   "name": "Shop G",
+   "walkable": false
+   }
+   b. A walkable, contiguous space.
+   "153": {
+   "name": "Road",
+   "walkable": true,
+   "wait": null
+   }
+   or
+   "112": {
+   "name": "Shop G zone",
+   "walkable": true,
+   "traffic": 40,
+   "wait": {
+   "type": "time",
+   "min": 10,
+   "max": 60
+   }
+   }
+   c. An entry location (this is a walkable area):
+   "entry_one": {
+   "name": "entry_one",
+   "walkable": true,
+   "traffic": 30,
+   "wait": null,
+   "rect": [
+   30,
+   100,
+   70,
+   70
+   ]
+   }
+3. For example, columns, walls etc. will be non-walkable areas. As will interiors of shops. Each shop or kiosk or plaza will have its walkable 'location' (for eg. "112" above is the walkable location to "224" - Shop G).
+4. By the time you are done, every single color in your design proposal should be categorized as one of these types of spaces.
+5. Entry locations are spaces from which people enter/exit your design proposal. These have a 'rect' object (for eg. see (c) above). The rect object take 4 numbers [x, y, w, h]. You will have to decide where your entry locations are. To do this,
+   5a. Find the following line in the setup() and draw() functions in sketch.js (sketch.js is in the src folder)
+   // /* uncomment this for part 5 of the howto.
+   Remove the single line comment (i.e. remove //). Remember that a single line comment in Javascript is of the form
+   // single line comment.
+   A multi-line comment in Javascript is of the form
+   /*mult-line
+   comment\*/
+   5b. Right click on index.html and say "Open with Live Server". Run your cursor on the plan. At the bottom right, you will see the line "Mouse is at (x,y)", where x,y will give you the location of the pixel which the mouse cursor is pointing at. Move your mouse to the location where you want your entry location. Decide an appropriate width(w) and height(h) for the entry location. Specify this at the rect [x,y,w,h].
+
+5c. Do this for each entry location which you which to add. After you are done, restore the all // comments which you removed above.
+
+6. Each walkable shop zone or entry zone in your location_map has a 'traffic' variable. This is a number (for eg. 25), which signifies the average number of seconds between arriving at (or in the case of entry location, being spawned at) visitors to that location. You can modify this variable to decide how busy each location is relative to the other.
+
+7. Your location_map file should have only those locations (of the three types given in (2) above) which are present in your plan.
+
+8. Any alternative which you load, should consist of (a) location_map.json, and (b) plan.png. You can give your files any reasonable name. Fine the preload() function in the sketch.js file, and the png file with your png filename, and the json file with your json file.
+
+function preload () {
+img = loadImage('resources/plan_alt_1.png')
+locations = loadJSON('resources/location_map.json')
+}
+
+9. Scale: You should have some idea of the scale of your plan. For eg. you should know the width of your shop in metres. See how many pixels the width of your shop requires using the Mouse location described above. Calculate the pixels_per_metre. Go to config.js (it is in the src folder) and replace the value assigned to pixelsPerMeter with your calculated value. (Look for the line 'const pixelsPerMeter = 20' in config.js)
+
+10. Save your files. Run your simulation.
