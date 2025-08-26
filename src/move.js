@@ -266,8 +266,9 @@ class Move {
 
   seek (target, arrive) {
     let force = p5.Vector.sub(target, this.person.position)
+    let dist = p5.Vector.dist(target, this.person.position)
     let speed = this.person.maxSpeed
-    if (arrive) {
+    if (arrive && dist <= this.seeing_Distance) {
       speed = map(
         force.mag(),
         0,
@@ -337,8 +338,8 @@ class Move {
     let normalDist = p5.Vector.dist(obstacle.position, normalPoint)
     let force = createVector()
     if (
-      normalDist < obstacle.major * 2 + this.person.major * 2 &&
-      futureDist < obstacle.major * 2
+      normalDist < obstacle.major * 1.2 + this.person.major * 1.2 &&
+      futureDist < obstacle.major * 1.2
     ) {
       force = p5.Vector.sub(futurePoint, obstacle.position)
       force.setMag(this.person.maxForce)
