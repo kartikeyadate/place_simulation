@@ -57,6 +57,7 @@ class SpaceManager {
       if (key.startsWith('entry_') && cfg && Array.isArray(cfg.rect)) {
         const entryLoc = new Location(cfg.name || key, key, 'entry', cfg)
         entryLoc.populateFromRect(this.locationGrid, this.walkableColors)
+        console.log(entryLoc)
         // pick a centroid-weighted waypoint within the rect
         entryLoc.calculateCentroid()
         entryLoc.selectWeightedWaypoint()
@@ -338,7 +339,10 @@ class Location {
   }
 
   calculateCentroid () {
-    if (this.type === 'pixel' && this.pixels.length > 0) {
+    if (
+      (this.type === 'pixel' || this.type === 'entry') &&
+      this.pixels.length > 0
+    ) {
       let xSum = 0
       let ySum = 0
       for (let pixel of this.pixels) {
@@ -360,7 +364,10 @@ class Location {
   }
 
   selectWeightedWaypoint () {
-    if (this.type === 'pixel' && this.pixels.length > 0) {
+    if (
+      (this.type === 'pixel' || this.type === 'entry') &&
+      this.pixels.length > 0
+    ) {
       let sortedPixels = this.pixels.sort((a, b) => {
         let dA = p5.Vector.dist(a, this.centroid)
         let dB = p5.Vector.dist(b, this.centroid)
