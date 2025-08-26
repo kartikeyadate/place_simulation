@@ -62,6 +62,8 @@ class SpaceManager {
         entryLoc.selectWeightedWaypoint()
         this.entryLocations.push(entryLoc)
         this.entryLocationList.push(entryLoc.name)
+        this.locationGraph.addNode(entryLoc)
+        this.locationList.push(entryLoc)
       }
     }
 
@@ -162,7 +164,7 @@ class SpaceManager {
     // Convert centroids to waypoint Locations
     for (let i = 0; i < this.centroids.length; i++) {
       let locName = `voronoi_wp_${i}`
-      let loc = new Location(locName, i, 'waypoint', this.centroids[i])
+      let loc = new Location(locName, i, 'waypoint', null, this.centroids[i])
       this.locationList.push(loc)
       this.locationGraph.addNode(loc)
       this.targetLocationList.push(locName)
