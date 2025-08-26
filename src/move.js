@@ -27,12 +27,14 @@ class Move {
       startName,
       -1,
       'waypoint',
+      'null',
       this.person.position.copy()
     )
     const goalLoc = new Location(
       goalName,
       -2,
       'waypoint',
+      'null',
       this.finalTargetWaypoint.copy()
     )
     //add person and target locations to the waypoint graph.

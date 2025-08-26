@@ -1,12 +1,12 @@
 // ================================
 // sketch.js — refactored
 // The full sketch in a single file is stored locally at backups/combined.js
-// This is version 0.0.1 of a simulation of 'use'.
+// This is version 0.0.2 of a simulation of 'use'.
 // It uses a combination of local Reynolds steering behaviours
 // and global pathfinding along a voronoi tessellation of walkable areas
 // to simulate how many users might share a space.
 // Author: Kartikeya Date
-// Last Updated: August 25, 2025
+// Last Updated: August 26, 2025
 //
 // ================================
 // Global variables for the main sketch.js file
@@ -18,9 +18,11 @@ let maxAgents = 40
 let tempwp = null
 let makingwp = false
 let diagnosticGrid
+let running = true
+let stopButton
 
 let personCountP
-let spawnRateSlider
+let busynessSlider
 let currentSpawnRateP
 let showHeatMap = true
 let heatMapCheckBox
@@ -29,7 +31,7 @@ let heatMapCheckBox
 // p5 lifecycle
 // --------------------
 function preload () {
-  img = loadImage('resources/plan_alt.png')
+  img = loadImage('resources/plan_alt_1.png')
   locations = loadJSON('resources/location_map.json')
 }
 
@@ -45,6 +47,12 @@ function setup () {
   let simulateBtn = createButton('Simulate')
   simulateBtn.position(width - 50, img.height + 25)
   simulateBtn.mousePressed(() => setMode(SIMULATE))
+
+  stopButton = createButton('Pause Simulation')
+  stopButton.position(width / 3, img.height + 25)
+  stopButton.mousePressed(() => {
+    toggleSimulation()
+  })
 
   coordsPara = createP(`Mouse is at (0,0)`)
   coordsPara.position(20, img.height + 20)
@@ -63,12 +71,12 @@ function setup () {
   personCountP = createP(`Total persons: 0`)
   personCountP.position(20, img.height + 60)
 
-  currentSpawnRateP = createP('Current spawn rate: 0')
+  currentSpawnRateP = createP('Arrivals/min (derived): 0')
   currentSpawnRateP.position(20, img.height + 80)
 
-  spawnRateSlider = createSlider(1, 500, 50, 1)
-  spawnRateSlider.position(width - 350, img.height + 25)
-  spawnRateSlider.style('width', '200px')
+  busynessSlider = createSlider(0.5, 2.0, 1.0, 0.01)
+  busynessSlider.position(width - 350, img.height + 25)
+  busynessSlider.style('width', '200px')
 
   spaceManager.setupEnvironment()
   peopleManager.initAgents(5)
@@ -91,7 +99,10 @@ function draw () {
   }
 
   if (currentMode === SIMULATE) {
-    peopleManager.run()
+    if (running) {
+      peopleManager.run()
+    }
+
     peopleManager.show()
   } else if (currentMode === SETUP) {
     spaceManager.showWaypoints()
@@ -101,7 +112,27 @@ function draw () {
   coordsPara.html(`Mouse is at (` + mouseX + `, ` + mouseY + `)`)
   frPara.html('Frame rate is ' + frameRate().toFixed(1) + ' frames per second')
   personCountP.html(`Total persons: ${peopleManager.persons.length}`)
+
+  // Show derived arrivals per minute (at current busyness)
+  const baseLambda = peopleManager.deriveSpawnRate()
+  const busy = busynessSlider?.value ? busynessSlider.value() : 1.0
+  const arrivalsPerMin = baseLambda * busy * 60
   currentSpawnRateP.html(
-    `Current spawn rate: One person every ${spawnRateSlider.value()} frames`
+    `Arrivals/min (derived): ${arrivalsPerMin.toFixed(
+      2
+    )} — Busyness ×${busy.toFixed(2)}`
   )
+}
+
+function toggleSimulation () {
+  if (running) {
+    console.log('Simulation paused.')
+    noLoop()
+    stopButton.html('Resume Simulation')
+  } else {
+    console.log('Simulation resumed.')
+    loop()
+    stopButton.html('Pause Simulation')
+  }
+  running = !running
 }

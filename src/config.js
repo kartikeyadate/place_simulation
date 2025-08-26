@@ -3,6 +3,8 @@ const SIMULATE = 'simulate'
 let currentMode = SIMULATE
 const k = 16 // the desired number of waypoints
 
+const FPS = 60
+
 const pixelsPerMeter = 20
 const minShoulderCm = 40
 const maxShoulderCm = 50

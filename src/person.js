@@ -18,9 +18,8 @@ class Person {
     const minSpeedPxS = minSpeedCmS * pxPerCm
     const maxSpeedPxS = maxSpeedCmS * pxPerCm
 
-    const fps = 60
-    const minSpeedPxPerFrame = minSpeedPxS / fps
-    const maxSpeedPxPerFrame = maxSpeedPxS / fps
+    const minSpeedPxPerFrame = minSpeedPxS / FPS
+    const maxSpeedPxPerFrame = maxSpeedPxS / FPS
 
     this.major = random(minShoulderPx, maxShoulderPx)
     this.minor = (this.major * 2) / 3
