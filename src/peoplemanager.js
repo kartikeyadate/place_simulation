@@ -55,8 +55,9 @@ class PeopleManager {
   spawnPerson () {
     // Weighted pick an entry by its "traffic" (if present), otherwise equal
     const entry = this.pickWeighted(this.spaceManager.entryLocations, loc =>
-      typeof loc?.traffic === 'number' && loc.traffic > 0 ? 1 / loc.traffic : 1
+      typeof loc?.traffic === 'number' && loc.traffic > 0 ? loc.traffic : 1
     )
+
     if (!entry || !entry.pixels || entry.pixels.length === 0) return
 
     const spawnPos = random(entry.pixels)
@@ -147,18 +148,20 @@ class PeopleManager {
   }
 
   pickWeighted (arr, weightFn) {
-    let total = 0
-    for (let item of arr) {
-      total += Math.max(0, weightFn(item)) || 0
-      if (total <= 0) {
-        return random(arr)
-      }
-      let r = random(total)
-      for (let item of arr) {
-        r -= Math.max(0, weightFn(item) || 0)
-        if (r <= 0) return item
+    let weights = arr.map(item => Math.max(0, weightFn(item)) || 0)
+    let total = weights.reduce((a, b) => a + b, 0)
+
+    if (total <= 0) {
+      return random(arr) // fallback: uniform random
+    }
+
+    let r = random(total)
+    for (let i = 0; i < arr.length; i++) {
+      r -= weights[i]
+      if (r <= 0) {
+        return arr[i]
       }
     }
-    return arr[arr.length - 1]
+    return arr[arr.length - 1] // fallback
   }
 }

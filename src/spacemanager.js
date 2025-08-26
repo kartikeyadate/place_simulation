@@ -299,9 +299,7 @@ class Location {
       for (let i = x; i < x + w; i++) {
         for (let j = y; j < y + h; j++) {
           let c = locationGrid[i][j]
-          if (!walkable || walkable.includes(c.toString())) {
-            this.pixels.push(createVector(i, j))
-          }
+          this.pixels.push(createVector(i, j))
         }
       }
       this.pixelSet = new Set(this.pixels.map(p => `${p.x},${p.y}`))
