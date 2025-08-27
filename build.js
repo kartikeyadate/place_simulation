@@ -7,18 +7,7 @@ const path = require('path')
 const srcDir = path.join(__dirname, 'src')
 const backupDir = path.join(__dirname, 'backups')
 const outputFile = path.join(backupDir, 'combined.js')
-/*
- <script src="src/config.js"></script>
-    <script src="src/waypointgraph.js"></script>
-    <script src="src/spacemanager.js"></script>
-    <script src="src/person.js"></script>
-    <script src="src/move.js"></script>
-    <script src="src/peoplemanager.js"></script>
-    <script src="src/activity.js"></script>
-    <script src="src/ui.js"></script>
-    <script src="src/diagnostics.js"></script>
-    <script src="src/sketch.js"></script>
-    */
+
 const fileOrder = [
   'config.js',
   'waypointgraph.js',
@@ -29,6 +18,7 @@ const fileOrder = [
   'activity.js',
   'ui.js',
   'diagnostics.js',
+  'meet.js',
   'sketch.js'
 ]
 
