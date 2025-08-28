@@ -7,6 +7,7 @@ class Activity {
     this.currentMove = null
     this.state = 'IDLE'
     this.waitTimer = 0
+    this.meet = null
     this.completed = false
     this.startNextActivity()
   }
@@ -19,13 +20,18 @@ class Activity {
     }
 
     let activity = this.activities[this.currentActivityIndex]
+
     if (activity.type === 'move') {
-      // activity.waypoint is a p5.Vector
       this.currentMove = new Move(this.person, activity.waypoint, this.graph)
       this.state = 'MOVING'
     } else if (activity.type === 'wait') {
       this.waitTimer = activity.duration
       this.state = 'WAITING'
+      this.person.velocity.mult(0)
+    } else if (activity.type === 'meet') {
+      // activity should contain: { partners: [...], duration: n, kind: 'unplanned' }
+      this.meet = new Meet(activity.partners, activity.duration, activity.kind)
+      this.state = 'MEETING'
       this.person.velocity.mult(0)
     }
   }
@@ -46,7 +52,6 @@ class Activity {
       if (this.currentMove.isStuck()) {
         this.currentMove.unstick()
       }
-
       if (this.currentMove.isFinished()) {
         this.currentActivityIndex++
         this.startNextActivity()
@@ -56,6 +61,14 @@ class Activity {
       if (this.waitTimer <= 0) {
         this.currentActivityIndex++
         this.startNextActivity()
+      }
+    } else if (this.state === 'MEETING') {
+      if (this.meet) {
+        let stillMeeting = this.meet.update(this.person)
+        if (!stillMeeting) {
+          this.currentActivityIndex++
+          this.startNextActivity()
+        }
       }
     }
   }
