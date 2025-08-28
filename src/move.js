@@ -260,7 +260,7 @@ class Move {
   }
 
   unstick () {
-    let jitter = p5.Vector.random2D().mult(this.person.maxForce * 2)
+    let jitter = p5.Vector.random2D().mult(this.person.maxForce * 5)
     this.person.applyForce(jitter)
   }
 
@@ -426,8 +426,8 @@ class Move {
       this.person.velocity.mag(),
       this.person.minSpeed,
       this.person.maxSpeed,
-      1.0,
-      3.0,
+      1.5,
+      4.0,
       true
     )
     return base * scale

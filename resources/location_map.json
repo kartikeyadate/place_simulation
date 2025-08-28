@@ -72,7 +72,7 @@
     "117": {
         "name": "Shop C zone",
         "walkable": true,
-        "traffic": 10,
+        "traffic": 25,
         "wait": {
             "type": "time",
             "min": 10,
@@ -82,7 +82,7 @@
     "118": {
         "name": "Shop D zone",
         "walkable": true,
-        "traffic": 8,
+        "traffic": 25,
         "wait": {
             "type": "time",
             "min": 15,
@@ -172,8 +172,9 @@
         }
     },
     "106": {
-        "name": "Bus Stop",
-        "walkable": false,
+        "name": "Bus Stop zone",
+        "walkable": true,
+        "traffic": 20,
         "wait": {
             "type": "time",
             "min": 8,
@@ -192,7 +193,7 @@
     "entry_one": {
         "name": "entry_one",
         "walkable": true,
-        "traffic": 30,
+        "traffic": 20,
         "wait": null,
         "rect": [
             30,
@@ -216,7 +217,7 @@
     "entry_three": {
         "name": "entry_three",
         "walkable": true,
-        "traffic": 30,
+        "traffic": 20,
         "wait": null,
         "rect": [
             840,
@@ -240,7 +241,7 @@
     "entry_five": {
         "name": "entry_five",
         "walkable": true,
-        "traffic": 10,
+        "traffic": 20,
         "wait": null,
         "rect": [
             870,
