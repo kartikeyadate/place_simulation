@@ -61,7 +61,6 @@ class SpaceManager {
       if (key.startsWith('entry_') && cfg && Array.isArray(cfg.rect)) {
         const entryLoc = new Location(cfg.name || key, key, 'entry', cfg)
         entryLoc.populateFromRect(this.locationGrid, this.walkableColors)
-        console.log(entryLoc)
         // pick a centroid-weighted waypoint within the rect
         entryLoc.calculateCentroid()
         entryLoc.selectWeightedWaypoint()
@@ -287,8 +286,7 @@ class SpaceManager {
   }
 
   visibilityTest (a, b) {
-    let dist = p5.Vector.dist(a, b)
-    let steps = int(dist) // one step per pixel along the line
+    let steps = p5.Vector.dist(a, b)
 
     for (let i = 0; i <= steps; i++) {
       let t = i / steps

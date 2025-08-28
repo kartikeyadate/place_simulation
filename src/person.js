@@ -32,6 +32,8 @@ class Person {
     this.recentPositions = []
     this.stuckFrames = 0
     this.activity = null
+    this.meetingPropensity = random(0.1)
+    this.in_meeting = false
   }
 
   show () {
