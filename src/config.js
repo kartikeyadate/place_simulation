@@ -1,7 +1,7 @@
 const SETUP = 'setup'
 const SIMULATE = 'simulate'
 let currentMode = SIMULATE
-const k = 16 // the desired number of waypoints
+const k = 22 // the desired number of waypoints
 
 const FPS = 60
 

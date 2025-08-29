@@ -20,6 +20,7 @@ let makingwp = false
 let diagnosticGrid
 let running = true
 let stopButton
+let persQt
 
 let personCountP
 let busynessSlider
@@ -83,6 +84,7 @@ function setup () {
   busynessSlider.position(width - 350, img.height + 25)
   busynessSlider.style('width', '200px')
 
+  persQt = new Quadtree(0, 0, img.width, img.height)
   spaceManager.setupEnvironment()
   peopleManager.initAgents(5)
 
