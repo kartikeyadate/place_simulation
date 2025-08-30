@@ -86,7 +86,7 @@ function setup () {
 
   busynessSliderP = createP(`Busyness Slider:`)
   busynessSliderP.position(width - 350, img.height + 7)
-  busynessSlider = createSlider(0.5, 2.0, 1.0, 0.01)
+  busynessSlider = createSlider(0.0, 4.0, 1.0, 0.01)
   busynessSlider.position(width - 350, img.height + 40)
   busynessSlider.style('width', '200px')
 

@@ -80,17 +80,18 @@ class Move {
 
   isFinished () {
     const dist = p5.Vector.dist(this.person.position, this.finalTargetWaypoint)
-
-    // Use body size as tolerance (half shoulder span feels natural)
     const tolerance = this.person.major * 2
 
-    // Option A: close enough
+    // Within body span = done
     if (dist < tolerance) return true
 
-    // Option B: close *and* basically stopped
+    // Close enough and not actually approaching anymore
     if (
       dist < tolerance * 2 &&
-      this.person.velocity.mag() < this.person.minSpeed * 0.5
+      p5.Vector.dot(
+        this.person.velocity,
+        p5.Vector.sub(this.finalTargetWaypoint, this.person.position)
+      ) <= 0
     ) {
       return true
     }
@@ -157,31 +158,28 @@ class Move {
       this.finalTargetWaypoint
     )
 
-    // === ADAPTIVE WEIGHTING LOGIC ===
-
-    // 1. Prioritize avoidance when danger is imminent (same as before)
+    // 1. Prioritize avoidance when danger is imminent
     if (nearestDist > 0 && nearestDist < this.person.major * 2) {
       weights.avoidStatic *= 2.0
       weights.avoidDynamic *= 2.0
       weights.seek *= 0.5
     }
-    // 2. Prioritize goal-seeking on final approach
+    // 2. Goal lock: near the goal → boost seek, suppress avoidance
     else if (goalDist < this.person.seeing_Distance) {
-      // Agent is close to its goal, boost seek and suppress avoidance
-      let closeFactor = 1 - goalDist / this.person.seeing_Distance // 0 to 1
-      weights.seek += 2.0 * closeFactor // Add a significant boost
-      weights.avoidStatic *= 1 - closeFactor * 0.5 // Slightly reduce avoidance
-      weights.avoidDynamic *= 1 - closeFactor * 0.5
-      weights.wander = 0 // Turn off wandering on the final approach
+      let closeFactor = 1 - goalDist / this.person.seeing_Distance // 0..1
+      weights.seek += 3.0 * closeFactor
+      weights.avoidStatic *= 1 - closeFactor * 0.8
+      weights.avoidDynamic *= 1 - closeFactor * 0.8
+      weights.wander = 0
     }
 
-    // 3. Handle crowding (same as before)
+    // 3. Handle crowding
     if (neighbors.length > 3) {
       weights.queueing *= 1.5
       weights.cohesion *= 1.2
     }
 
-    // 4. If far from goal, wander more (same as before)
+    // 4. Far from goal → wander more
     if (goalDist > this.person.seeing_Distance * 5) {
       weights.wander *= 1.5
     }
