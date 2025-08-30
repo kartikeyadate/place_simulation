@@ -70,7 +70,7 @@ function setup () {
     showHeatMap = heatMapCheckBox.checked()
   })
 
-  spaceManager = new SpaceManager(img, locations, k)
+  spaceManager = new SpaceManager(img, locations, k, 5)
   peopleManager = new PeopleManager(spaceManager)
 
   personCountP = createP(`Total persons: 0`)

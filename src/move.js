@@ -37,24 +37,21 @@ class Move {
       'null',
       this.finalTargetWaypoint.copy()
     )
-    //add person and target locations to the waypoint graph.
+
     g.addNode(startLoc)
     g.addNode(goalLoc)
 
-    let newNodes = [startLoc, goalLoc]
-
-    //generate edges
     const connect = srcLoc => {
-      for (let key in newNodes) {
-        if (key === srcLoc.name) continue
+      for (let key in g.nodes) {
         const other = g.nodes[key]
-        if (!other || !other.waypoint) continue
+        if (!other || !other.waypoint || other.name === srcLoc.name) continue
         if (spaceManager.visibilityTest(srcLoc.waypoint, other.waypoint)) {
           const w = p5.Vector.dist(srcLoc.waypoint, other.waypoint)
           g.addEdge(srcLoc.name, other.name, w)
         }
       }
     }
+
     connect(startLoc)
     connect(goalLoc)
 
@@ -82,7 +79,23 @@ class Move {
   }
 
   isFinished () {
-    return p5.Vector.dist(this.person.position, this.finalTargetWaypoint) < 10
+    const dist = p5.Vector.dist(this.person.position, this.finalTargetWaypoint)
+
+    // Use body size as tolerance (half shoulder span feels natural)
+    const tolerance = this.person.major * 2
+
+    // Option A: close enough
+    if (dist < tolerance) return true
+
+    // Option B: close *and* basically stopped
+    if (
+      dist < tolerance * 2 &&
+      this.person.velocity.mag() < this.person.minSpeed * 0.5
+    ) {
+      return true
+    }
+
+    return false
   }
 
   move (obstacles, neighbors = []) {
@@ -90,7 +103,7 @@ class Move {
       this.person.velocity.mult(0)
       return
     }
-    this.person.seeing_Distance = this.getSeeingDistance()
+    const dt = 1 / FPS
 
     let distanceToWaypoint = p5.Vector.dist(
       this.person.position,
@@ -112,178 +125,206 @@ class Move {
     let combinedForce = this.applyBehaviorForces(obstacles, neighbors)
     this.person.applyForce(combinedForce)
 
-    this.person.velocity.add(this.person.acceleration)
+    // Semi-implicit Euler
+    this.person.velocity.add(p5.Vector.mult(this.person.acceleration, dt))
     this.person.velocity.limit(this.person.maxSpeed)
     if (this.person.velocity.mag() < this.person.minSpeed) {
       this.person.velocity.setMag(this.person.minSpeed)
     }
-    this.person.position.add(this.person.velocity)
+    this.person.position.add(p5.Vector.mult(this.person.velocity, dt))
     this.person.acceleration.mult(0)
+  }
 
-    this.updateHistory()
-    if (this.isStuck()) {
-      this.unstick()
+  getAdaptiveWeights (obstacles, neighbors) {
+    let weights = {
+      queueing: 1.2,
+      cohesion: 0.25,
+      alignment: 0.25,
+      seek: 1.8,
+      avoidStatic: 7.0,
+      avoidDynamic: 4.5,
+      bounds: 2.0,
+      wander: 0.08
     }
+
+    // Distance to nearest obstacle
+    let nearestObs = this.evaluate_obstacles(obstacles)
+    let nearestDist = nearestObs.mag()
+
+    // Distance to goal
+    let goalDist = p5.Vector.dist(
+      this.person.position,
+      this.finalTargetWaypoint
+    )
+
+    // === ADAPTIVE WEIGHTING LOGIC ===
+
+    // 1. Prioritize avoidance when danger is imminent (same as before)
+    if (nearestDist > 0 && nearestDist < this.person.major * 2) {
+      weights.avoidStatic *= 2.0
+      weights.avoidDynamic *= 2.0
+      weights.seek *= 0.5
+    }
+    // 2. Prioritize goal-seeking on final approach
+    else if (goalDist < this.person.seeing_Distance) {
+      // Agent is close to its goal, boost seek and suppress avoidance
+      let closeFactor = 1 - goalDist / this.person.seeing_Distance // 0 to 1
+      weights.seek += 2.0 * closeFactor // Add a significant boost
+      weights.avoidStatic *= 1 - closeFactor * 0.5 // Slightly reduce avoidance
+      weights.avoidDynamic *= 1 - closeFactor * 0.5
+      weights.wander = 0 // Turn off wandering on the final approach
+    }
+
+    // 3. Handle crowding (same as before)
+    if (neighbors.length > 3) {
+      weights.queueing *= 1.5
+      weights.cohesion *= 1.2
+    }
+
+    // 4. If far from goal, wander more (same as before)
+    if (goalDist > this.person.seeing_Distance * 5) {
+      weights.wander *= 1.5
+    }
+
+    return weights
   }
 
   applyBehaviorForces (obstacles, neighbors) {
-    let combinedForce = createVector(0, 0)
+    let combined = createVector(0, 0)
+    const weights = this.getAdaptiveWeights(obstacles, neighbors)
 
-    const weights = {
-      queueing: 1.0,
-      cohesion: 0.2,
-      alignment: 0.2,
-      seek: 2.0,
-      avoidStatic: 3.5,
-      avoidDynamic: 3.0,
-      bounds: 1.0,
-      wander: 0.05
-    }
+    combined.add(
+      this.seek(this.targetWaypoint, this.isMovingToFinalTarget).mult(
+        weights.seek
+      )
+    )
+    combined.add(this.avoidStaticObstacles().mult(weights.avoidStatic))
+    combined.add(this.evaluate_obstacles(obstacles).mult(weights.avoidDynamic))
+    combined.add(this.bounds().mult(weights.bounds))
+    combined.add(this.wander().mult(weights.wander))
+    combined.add(this.queueing(neighbors).mult(weights.queueing))
+    combined.add(this.cohesion(neighbors).mult(weights.cohesion))
+    combined.add(this.alignment(neighbors).mult(weights.alignment))
 
-    let seekForce = this.seek(this.targetWaypoint, this.isMovingToFinalTarget)
-    let avoidStaticForce = this.avoidStaticObstacles()
-    let avoidDynamicForce = this.evaluate_obstacles(obstacles)
-    let boundsForce = this.bounds()
-    let wanderForce = this.wander()
-    let queueingForce = this.queueing(neighbors)
-    let cohesionForce = this.cohesion(neighbors)
-    let alignmentForce = this.alignment(neighbors)
-
-    combinedForce.add(seekForce.mult(weights.seek))
-    combinedForce.add(avoidStaticForce.mult(weights.avoidStatic))
-    combinedForce.add(avoidDynamicForce.mult(weights.avoidDynamic))
-    combinedForce.add(boundsForce.mult(weights.bounds))
-    combinedForce.add(wanderForce.mult(weights.wander))
-    combinedForce.add(queueingForce.mult(weights.queueing))
-    combinedForce.add(cohesionForce.mult(weights.cohesion))
-    combinedForce.add(alignmentForce.mult(weights.alignment))
-
-    return combinedForce.limit(this.person.maxForce)
+    combined.limit(this.person.maxAccel)
+    return combined
   }
 
-  // --- Queueing behavior (forward separation) ---
+  // --- Queueing (acceleration) ---
   queueing (neighbors) {
     let steering = createVector()
     let total = 0
-    if (!this.person.velocity || this.person.velocity.mag() === 0)
-      return steering
+    if (this.person.velocity.mag() === 0) return steering
 
-    let lookAhead = this.person.velocity.mag() * 4
     let forward = this.person.velocity.copy().normalize()
+    let lookAhead = this.person.velocity.mag() * 0.8 // px
 
     for (let other of neighbors) {
       if (other === this.person) continue
-      let offset = p5.Vector.sub(other.position, this.person.position)
-      let projection = p5.Vector.dot(offset, forward)
 
-      if (projection > 0 && projection < lookAhead) {
+      let offset = p5.Vector.sub(other.position, this.person.position)
+      let proj = p5.Vector.dot(offset, forward)
+
+      if (proj > 0 && proj < lookAhead) {
         let dist = offset.mag()
-        if (dist < 30) {
-          let away = forward.copy().mult(-1 / dist)
-          steering.add(away)
-          total++
+
+        // Only react if inside personal space
+        if (dist < this.person.major * 3) {
+          // Relative velocity along forward axis
+          let relVel = p5.Vector.dot(
+            p5.Vector.sub(this.person.velocity, other.velocity),
+            forward
+          )
+
+          if (relVel > 0) {
+            // only if we're actually closing in
+            // Quadratic falloff → sharp when close, soft when farther
+            let falloff = 1 / Math.pow(dist / this.person.major, 2)
+
+            let strength = this.person.maxAccel * falloff
+
+            // Scale by relative speed so faster agents brake harder
+            strength *= relVel / this.person.maxSpeed
+
+            let brake = forward.copy().mult(-strength)
+            steering.add(brake)
+            total++
+          }
         }
       }
     }
 
-    if (total > 0) {
-      steering.div(total)
-      steering.setMag(this.person.maxSpeed * 0.5)
-      steering.sub(this.person.velocity)
-      steering.limit(this.person.maxForce)
-    }
+    if (total > 0) steering.div(total)
     return steering
   }
 
   cohesion (neighbors) {
     let perceptionRadius = this.getSeeingDistance()
-    let steering = createVector()
+    let sum = createVector()
     let total = 0
+
     for (let other of neighbors) {
       let d = p5.Vector.dist(this.person.position, other.position)
       if (other !== this.person && d < perceptionRadius) {
-        steering.add(other.position)
+        sum.add(other.position)
         total++
       }
     }
+
     if (total > 0) {
-      steering.div(total)
-      steering.sub(this.person.position)
-      steering.setMag(this.person.maxSpeed)
-      steering.sub(this.person.velocity)
-      steering.limit(this.person.maxForce)
+      sum.div(total)
+      let desired = p5.Vector.sub(sum, this.person.position)
+      desired.setMag(this.person.maxSpeed) // desired vel
+      let steer = p5.Vector.sub(desired, this.person.velocity) // Δv
+      steer.mult(FPS) // accel
+      steer.limit(this.person.maxAccel)
+      return steer
     }
-    return steering
+    return createVector()
   }
 
   alignment (neighbors) {
     let perceptionRadius = this.getSeeingDistance()
-    let steering = createVector()
+    let sum = createVector()
     let total = 0
+
     for (let other of neighbors) {
       let d = p5.Vector.dist(this.person.position, other.position)
       if (other !== this.person && d < perceptionRadius) {
-        steering.add(other.velocity)
+        sum.add(other.velocity)
         total++
       }
     }
+
     if (total > 0) {
-      steering.div(total)
-      steering.setMag(this.person.maxSpeed)
-      steering.sub(this.person.velocity)
-      steering.limit(this.person.maxForce)
+      sum.div(total)
+      sum.setMag(this.person.maxSpeed)
+      let steer = p5.Vector.sub(sum, this.person.velocity)
+      steer.mult(FPS)
+      steer.limit(this.person.maxAccel)
+      return steer
     }
-    return steering
-  }
-
-  // -------------- helpers --------------
-  updateHistory () {
-    this.person.recentPositions.push(this.person.position.copy())
-    if (this.person.recentPositions.length > 12) {
-      this.person.recentPositions.shift()
-    }
-  }
-
-  isStuck () {
-    if (this.person.recentPositions.length <= 12) {
-      return false
-    }
-    let total = 0
-    for (let i = 1; i < this.person.recentPositions.length; i++) {
-      total += p5.Vector.dist(
-        this.person.recentPositions[i],
-        this.person.recentPositions[i - 1]
-      )
-    }
-    let avgMove = total / (this.person.recentPositions.length - 1)
-    return avgMove < 4
-  }
-
-  unstick () {
-    let jitter = p5.Vector.random2D().mult(this.person.maxForce * 5)
-    this.person.applyForce(jitter)
+    return createVector()
   }
 
   seek (target, arrive) {
-    let force = p5.Vector.sub(target, this.person.position)
-    let dist = p5.Vector.dist(target, this.person.position)
+    let desired = p5.Vector.sub(target, this.person.position)
+    let d = desired.mag()
+    if (d === 0) return createVector(0, 0)
+
     let speed = this.person.maxSpeed
-    if (arrive && dist <= this.seeing_Distance) {
-      speed = map(
-        force.mag(),
-        0,
-        this.person.seeing_Distance,
-        0,
-        this.person.maxSpeed
-      )
+    if (arrive && d < this.person.seeing_Distance) {
+      speed = map(d, 0, this.person.seeing_Distance, 0, this.person.maxSpeed)
     }
-    force.setMag(speed)
-    force.limit(this.person.maxForce)
-    return force
+    desired.setMag(speed)
+    let steer = p5.Vector.sub(desired, this.person.velocity)
+    steer.mult(FPS)
+    steer.limit(this.person.maxAccel)
+    return steer
   }
 
   avoidStaticObstacles () {
-    let rayAngles = [0, -40, 40]
+    let rayAngles = [0, -50, 50] // degrees
     let rayLength = map(
       this.person.velocity.mag(),
       this.person.minSpeed,
@@ -292,142 +333,101 @@ class Move {
       this.person.seeing_Distance * 6
     )
 
-    let bestForce = createVector(0, 0)
-    let minDist = Infinity
+    let steering = createVector(0, 0)
+    let hits = 0
 
     for (let a of rayAngles) {
-      let dir = this.person.velocity.copy().setMag(rayLength).rotate(radians(a))
+      let dir = this.person.velocity.copy()
+      if (dir.mag() === 0) dir = createVector(1, 0)
+      dir.setMag(rayLength).rotate(radians(a))
+
       let aheadPoint = p5.Vector.add(this.person.position, dir)
 
       for (let t = 0; t <= 1; t += 0.02) {
         let probe = p5.Vector.lerp(this.person.position, aheadPoint, t)
         if (spaceManager.isObstacle(probe.x, probe.y)) {
           let d = p5.Vector.dist(this.person.position, probe)
-          if (d < minDist) {
-            minDist = d
-            let force = p5.Vector.sub(this.person.position, probe)
-            force.setMag(map(d, 0, rayLength, this.person.maxForce, 0))
-            bestForce = force
-          }
+
+          // Repulsion away from obstacle
+          let away = p5.Vector.sub(this.person.position, probe)
+          let strength = map(d, 0, rayLength, this.person.maxAccel, 0)
+
+          // Scale side rays less than forward ray
+          let angleWeight = a === 0 ? 1.0 : 0.7
+
+          away.setMag(strength * angleWeight)
+          steering.add(away)
+
+          hits++
           break
         }
       }
     }
-    return bestForce
+
+    if (hits > 0) {
+      steering.div(hits)
+      steering.limit(this.person.maxAccel)
+    }
+
+    return steering
   }
 
-  get_nearest_obstacles (obstacles) {
-    let maxDist = Infinity
-    let nearest
-    for (let i = 0; i < obstacles.length; i++) {
-      if (this.person !== obstacles[i]) {
-        let d = p5.Vector.dist(obstacles[i].position, this.person.position)
-        if (d < maxDist && d > 0) {
-          maxDist = d
-          nearest = obstacles[i]
-        }
+  // For dynamic (other agents)
+  evaluate_obstacles (obstacles) {
+    let nearest = null
+    let minD = Infinity
+    for (let o of obstacles) {
+      if (o === this.person) continue
+      let d = p5.Vector.dist(this.person.position, o.position)
+      if (d < minD) {
+        minD = d
+        nearest = o
       }
     }
-    return nearest
-  }
-
-  avoid (obstacle) {
-    let normalPoint = this.get_normal_point(obstacle)
-    let futurePoint = this.get_future_point()
-    let futureDist = p5.Vector.dist(obstacle.position, futurePoint)
-    let normalDist = p5.Vector.dist(obstacle.position, normalPoint)
-    let force = createVector()
-    if (
-      normalDist < obstacle.major * 1.2 + this.person.major * 1.2 &&
-      futureDist < obstacle.major * 1.2
-    ) {
-      force = p5.Vector.sub(futurePoint, obstacle.position)
-      force.setMag(this.person.maxForce)
-    }
-    return force
-  }
-
-  evaluate_obstacles (obstacles) {
-    let nearest = this.get_nearest_obstacles(obstacles)
-    if (nearest) {
-      return this.avoid(nearest)
+    if (nearest && minD < this.person.seeing_Distance) {
+      let away = p5.Vector.sub(this.person.position, nearest.position)
+      let strength = this.person.maxAccel * (1 / (minD / this.person.major))
+      away.setMag(Math.min(strength, this.person.maxAccel * 2.5))
+      return away
     }
     return createVector(0, 0)
   }
 
-  get_normal_point (other) {
-    let vA = p5.Vector.sub(other.position, this.person.position)
-    let vB = this.person.velocity.copy().normalize()
-    vB.mult(vA.dot(vB))
-    return p5.Vector.add(this.person.position, vB)
-  }
-
-  get_future_point () {
-    return p5.Vector.add(
-      this.person.position,
-      this.person.velocity.copy().mult(this.person.seeing_Distance)
-    )
-  }
-
   wander () {
     let wanderPoint = this.person.velocity.copy()
-    wanderPoint.setMag(this.person.seeing_Distance * 5)
+    wanderPoint.setMag(this.person.seeing_Distance)
     wanderPoint.add(this.person.position)
 
-    let wanderRadius = this.person.seeing_Distance * 20
+    let wanderRadius = this.person.seeing_Distance * 0.5
     let angle = this.person.wanderTheta + this.person.velocity.heading()
-    let xoff = wanderRadius * cos(angle)
-    let yoff = wanderRadius * sin(angle)
+    wanderPoint.add(wanderRadius * cos(angle), wanderRadius * sin(angle))
 
-    wanderPoint.add(xoff, yoff)
-    let wander = wanderPoint.sub(this.person.position)
-    wander.setMag(this.person.maxForce)
-    this.person.wanderTheta += random(-0.05, 0.05)
-    return wander
-  }
-
-  edges () {
-    if (this.person.position.x > width) this.person.position.x = 0
-    else if (this.person.position.x < 0) this.person.position.x = width
-    if (this.person.position.y > height) this.person.position.y = 0
-    else if (this.person.position.y < 0) this.person.position.y = height
+    let wanderForce = p5.Vector.sub(wanderPoint, this.person.position)
+    wanderForce.setMag(this.person.maxAccel * 0.3)
+    this.person.wanderTheta += random(-0.25, 0.25)
+    return wanderForce
   }
 
   bounds () {
-    let desired = null
-
-    if (this.person.position.x - this.person.seeing_Distance < 0) {
-      desired = createVector(this.person.maxSpeed, this.person.velocity.y)
-    } else if (this.person.position.x > width - this.person.seeing_Distance) {
-      desired = createVector(-this.person.maxSpeed, this.person.velocity.y)
-    }
-
-    if (this.person.position.y < this.person.seeing_Distance) {
-      desired = createVector(this.person.velocity.x, this.person.maxSpeed)
-    } else if (this.person.position.y > height - this.person.seeing_Distance) {
-      desired = createVector(this.person.velocity.x, -this.person.maxSpeed)
-    }
-
     let steer = createVector(0, 0)
-    if (desired) {
-      desired.normalize()
-      desired.mult(this.person.maxSpeed)
-      steer = p5.Vector.sub(desired, this.person.velocity)
-      steer.limit(this.person.maxForce)
-    }
+    let margin = this.person.seeing_Distance
+    if (this.person.position.x < margin) steer.x = this.person.maxAccel
+    else if (this.person.position.x > width - margin)
+      steer.x = -this.person.maxAccel
+    if (this.person.position.y < margin) steer.y = this.person.maxAccel
+    else if (this.person.position.y > height - margin)
+      steer.y = -this.person.maxAccel
     return steer
   }
 
   getSeeingDistance () {
-    // Base distance when standing still
     const base = pixelsPerMeter
-    // Scale linearly with velocity magnitude
     const scale = map(
       this.person.velocity.mag(),
       this.person.minSpeed,
       this.person.maxSpeed,
-      1.5,
-      4.0,
+      2,
+      6,
       true
     )
     return base * scale
@@ -447,5 +447,16 @@ class Move {
       i = j
     }
     return pruned
+  }
+
+  showTarget () {
+    if (this.finalTargetWaypoint) {
+      push()
+      noFill()
+      stroke(0, 255, 0)
+      strokeWeight(2)
+      ellipse(this.finalTargetWaypoint.x, this.finalTargetWaypoint.y, 15, 15)
+      pop()
+    }
   }
 }
