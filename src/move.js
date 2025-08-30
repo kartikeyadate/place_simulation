@@ -137,38 +137,51 @@ class Move {
 
   getAdaptiveWeights (obstacles, neighbors) {
     let weights = {
-      queueing: 1.2, // slightly higher than 1.0 → reduces overruns
-      cohesion: 0.25, // weaker → prevents clumping unless needed
-      alignment: 0.25, // modest → keeps local flow but avoids "flocking lockstep"
-      seek: 1.8, // slightly lower than 2.0 → gives room for avoidance
-      avoidStatic: 7.0, // strong → walls/obstacles are hard constraints
-      avoidDynamic: 4.5, // strong but a bit weaker than static
-      bounds: 2.0, // unchanged
-      wander: 0.08 // slightly higher → keeps motion from looking robotic
+      queueing: 1.2,
+      cohesion: 0.25,
+      alignment: 0.25,
+      seek: 1.8,
+      avoidStatic: 7.0,
+      avoidDynamic: 4.5,
+      bounds: 2.0,
+      wander: 0.08
     }
 
     // Distance to nearest obstacle
     let nearestObs = this.evaluate_obstacles(obstacles)
     let nearestDist = nearestObs.mag()
 
-    // If too close to an obstacle → prioritize avoidance
-    if (nearestDist > 0 && nearestDist < this.person.seeing_Distance) {
+    // Distance to goal
+    let goalDist = p5.Vector.dist(
+      this.person.position,
+      this.finalTargetWaypoint
+    )
+
+    // === ADAPTIVE WEIGHTING LOGIC ===
+
+    // 1. Prioritize avoidance when danger is imminent (same as before)
+    if (nearestDist > 0 && nearestDist < this.person.major * 2) {
       weights.avoidStatic *= 2.0
       weights.avoidDynamic *= 2.0
       weights.seek *= 0.5
     }
+    // 2. Prioritize goal-seeking on final approach
+    else if (goalDist < this.person.seeing_Distance) {
+      // Agent is close to its goal, boost seek and suppress avoidance
+      let closeFactor = 1 - goalDist / this.person.seeing_Distance // 0 to 1
+      weights.seek += 2.0 * closeFactor // Add a significant boost
+      weights.avoidStatic *= 1 - closeFactor * 0.5 // Slightly reduce avoidance
+      weights.avoidDynamic *= 1 - closeFactor * 0.5
+      weights.wander = 0 // Turn off wandering on the final approach
+    }
 
-    // If crowded by neighbors → boost queueing & cohesion
+    // 3. Handle crowding (same as before)
     if (neighbors.length > 3) {
       weights.queueing *= 1.5
       weights.cohesion *= 1.2
     }
 
-    // If far from goal → wander a bit more
-    let goalDist = p5.Vector.dist(
-      this.person.position,
-      this.finalTargetWaypoint
-    )
+    // 4. If far from goal, wander more (same as before)
     if (goalDist > this.person.seeing_Distance * 5) {
       weights.wander *= 1.5
     }

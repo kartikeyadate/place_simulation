@@ -4,7 +4,7 @@ let currentMode = SIMULATE
 const k = 22 // the desired number of waypoints
 
 //scaling pixel <-> m, and frame <-> second
-const FPS = 30
+const FPS = 60
 const pixelsPerMeter = 20
 
 // --- Helpers ---
