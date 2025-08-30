@@ -24,6 +24,7 @@ class PeopleManager {
     for (let i = this.persons.length - 1; i >= 0; i--) {
       this.persons[i].activity.run(this.obstacles)
       if (this.persons[i].activity.completed) {
+        console.log('Removing ' + this.persons[i].id)
         this.persons.splice(i, 1)
       }
     }
@@ -33,6 +34,7 @@ class PeopleManager {
   show () {
     for (let person of this.persons) {
       person.show()
+      person.activity?.currentMove?.showTarget?.()
     }
   }
 
@@ -53,17 +55,17 @@ class PeopleManager {
   }
 
   spawnPerson () {
-    // Weighted pick an entry by its "traffic" (if present), otherwise equal
     const entry = this.pickWeighted(this.spaceManager.entryLocations, loc =>
       typeof loc?.traffic === 'number' && loc.traffic > 0 ? loc.traffic : 1
     )
 
     if (!entry || !entry.pixels || entry.pixels.length === 0) return
-
     const spawnPos = random(entry.pixels)
     if (!spawnPos) return
 
     const activities = []
+
+    // Person now expects physical params (same call signature as before)
     let person = new Person(
       spawnPos.x,
       spawnPos.y,
@@ -74,7 +76,7 @@ class PeopleManager {
       maxSpeedCmS
     )
 
-    // Build an itinerary: random number of sub-goal visits, weighted by "traffic"
+    // --- build itinerary ---
     const numStops = floor(random(3, 7))
     for (let c = 1; c < numStops - 1; c++) {
       const targetLoc = this.pickWeighted(
@@ -88,7 +90,7 @@ class PeopleManager {
 
       targetLoc.selectWeightedWaypoint()
 
-      // Wait duration: use targetLoc.wait (seconds) -> frames
+      // Wait time in seconds → frames
       let waitFrames = 0
       if (targetLoc.wait && targetLoc.wait.type === 'time') {
         const mn = Math.max(0, Number(targetLoc.wait.min) || 0)
@@ -104,7 +106,7 @@ class PeopleManager {
       }
     }
 
-    // Exit via a (possibly) different entry, chosen weighted by entry demand
+    // Exit
     const lastTarget = this.pickWeighted(
       this.spaceManager.entryLocations,
       loc =>
@@ -163,5 +165,48 @@ class PeopleManager {
       }
     }
     return arr[arr.length - 1] // fallback
+  }
+
+  populate_qtree () {
+    for (let p of this.persons) {
+      let pt = new QtPt(p.position.x, p.position.y, p)
+      this.spaceManager.qt.insert(pt)
+    }
+  }
+
+  identify_possible_meetings () {
+    this.populate_qtree()
+    for (let p of this.persons) {
+      angleMode(RADIANS)
+      let angle = p.velocity.heading()
+      let pos = p.position
+      let fov = 5 / 18
+      let range = new QtCone(pos.x, pos.y, angle, fov, p.seeing_Distance * 5)
+      let finds = this.qt.query(range)
+      for (let f of finds) {
+        let other = f.userData
+        if (other !== p) {
+          p.in_fov(other)
+        }
+      }
+    }
+    let possible_meetings = new Set()
+    for (let a of this.persons) {
+      for (let b of a.in_fov) {
+        //the spatial test for an unplanned meeting.
+        if (b.in_fov.has(a)) {
+          //the social test for an unplanned meeting.
+          let already_meeting = a.in_meeting || b.in_meeting
+          let prop = random()
+          let meet_propensity =
+            prop < a.meetingPropensity && prop < b.meetingPropensity
+          if (!already_meeting && meet_propensity) {
+            let pair = [a.id, b.id].sort().join('-')
+            possible_meetings.add(pair)
+          }
+        }
+      }
+    }
+    return possible_meetings
   }
 }

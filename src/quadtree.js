@@ -74,6 +74,56 @@ class QtCir {
   }
 }
 
+class QtCone {
+  constructor (x, y, angle, fov, r) {
+    this.x = x
+    this.y = y
+    this.angle = angle // direction angle in radians
+    this.fov = fov // half-angle of cone in radians
+    this.r = r
+    this.rSquared = r * r
+    this.dir = createVector(Math.cos(angle), Math.sin(angle)) // forward direction
+    this.cosFov = Math.cos(fov)
+  }
+
+  contains (point) {
+    let dx = point.x - this.x
+    let dy = point.y - this.y
+    let distSq = dx * dx + dy * dy
+    if (distSq > this.rSquared) return false
+
+    let v = createVector(dx, dy)
+    v.normalize()
+
+    let dot = v.x * this.dir.x + v.y * this.dir.y
+    return dot >= this.cosFov // inside cone angle
+  }
+
+  // Intersects with quadtree region
+  intersects (range) {
+    // Quick approximation: use bounding circle of cone
+    // (circle of radius r centered at cone apex).
+    // More precise cone-rectangle intersection is possible,
+    // but circle check is fast and conservative.
+    let circleApprox = new QtCir(this.x, this.y, this.r)
+    return circleApprox.intersects(range)
+  }
+
+  show () {
+    noStroke()
+    fill(255, 255, 0, 60)
+    arc(
+      this.x,
+      this.y,
+      this.r * 2,
+      this.r * 2,
+      this.angle - this.fov,
+      this.angle + this.fov,
+      PIE
+    )
+  }
+}
+
 class Quadtree {
   constructor (boundary, n) {
     this.boundary = boundary

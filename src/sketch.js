@@ -20,7 +20,6 @@ let makingwp = false
 let diagnosticGrid
 let running = true
 let stopButton
-let persQt
 
 let personCountP
 let busynessSlider
@@ -71,7 +70,7 @@ function setup () {
     showHeatMap = heatMapCheckBox.checked()
   })
 
-  spaceManager = new SpaceManager(img, locations, k)
+  spaceManager = new SpaceManager(img, locations, k, 5)
   peopleManager = new PeopleManager(spaceManager)
 
   personCountP = createP(`Total persons: 0`)
@@ -84,7 +83,6 @@ function setup () {
   busynessSlider.position(width - 350, img.height + 25)
   busynessSlider.style('width', '200px')
 
-  persQt = new Quadtree(0, 0, img.width, img.height)
   spaceManager.setupEnvironment()
   peopleManager.initAgents(5)
 

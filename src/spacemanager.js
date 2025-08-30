@@ -1,5 +1,5 @@
 class SpaceManager {
-  constructor (img, locationsData, k) {
+  constructor (img, locationsData, k, qtcap) {
     this.img = img
     this.locationsData = locationsData
     this.locationGrid = []
@@ -12,7 +12,7 @@ class SpaceManager {
     this.walkableSet = []
     this.entryLocations = [] // Location objects
     this.subGoalLocations = []
-
+    this.qtcapacity = qtcap
     // Voronoi variables
     this.centroids = []
     this.k = k
@@ -53,6 +53,7 @@ class SpaceManager {
     this.populate_entries_and_subgoals()
     this.voronoi_generate_waypoints()
     this.buildGraph()
+    this.makeQTree()
   }
 
   populate_entries_and_subgoals () {
@@ -311,6 +312,11 @@ class SpaceManager {
       }
     }
     return nearest ? nearest.copy() : position
+  }
+
+  makeQTree () {
+    this.qtboundary = rect(0, 0, img.width, img.height)
+    this.qt = new Quadtree(this.qtboundary, this.qtcapacity)
   }
 }
 

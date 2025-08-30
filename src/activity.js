@@ -29,7 +29,6 @@ class Activity {
       this.state = 'WAITING'
       this.person.velocity.mult(0)
     } else if (activity.type === 'meet') {
-      // activity should contain: { partners: [...], duration: n, kind: 'unplanned' }
       this.meet = new Meet(activity.partners, activity.duration, activity.kind)
       this.state = 'MEETING'
       this.person.velocity.mult(0)
@@ -41,17 +40,6 @@ class Activity {
 
     if (this.state === 'MOVING') {
       this.currentMove.move(obstacles)
-      this.person.velocity.add(this.person.acceleration)
-      this.person.velocity.limit(this.person.maxSpeed)
-      if (this.person.velocity.mag() < this.person.minSpeed) {
-        this.person.velocity.setMag(this.person.minSpeed)
-      }
-      this.person.position.add(this.person.velocity)
-      this.person.acceleration.mult(0)
-      this.currentMove.updateHistory()
-      if (this.currentMove.isStuck()) {
-        this.currentMove.unstick()
-      }
       if (this.currentMove.isFinished()) {
         this.currentActivityIndex++
         this.startNextActivity()
@@ -76,6 +64,13 @@ class Activity {
   recalculatePath () {
     if (this.state === 'MOVING' && this.currentMove) {
       this.currentMove.recalculatePath()
+    }
+  }
+
+  // 🔍 draw target waypoint (green circle)
+  show () {
+    if (this.state === 'MOVING' && this.currentMove) {
+      this.currentMove.showTarget()
     }
   }
 }

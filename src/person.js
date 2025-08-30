@@ -2,38 +2,47 @@ class Person {
   constructor (
     x,
     y,
-    pixelsPerMeter,
+    ppm,
     minShoulderCm,
     maxShoulderCm,
     minSpeedCmS,
     maxSpeedCmS
   ) {
     this.position = createVector(x, y)
-    this.velocity = createVector(random(-1, 1), random(-1, 1))
-    this.acceleration = createVector()
+    this.velocity = createVector(random(-1, 1), random(-1, 1)) // px/s
+    this.acceleration = createVector(0, 0) // px/s²
 
-    const pxPerCm = pixelsPerMeter / 100
-    const minShoulderPx = minShoulderCm * pxPerCm
-    const maxShoulderPx = maxShoulderCm * pxPerCm
-    const minSpeedPxS = minSpeedCmS * pxPerCm
-    const maxSpeedPxS = maxSpeedCmS * pxPerCm
+    // Shoulder in meters → convert to pixels
+    const minShoulderM = cmToMeters(minShoulderCm)
+    const maxShoulderM = cmToMeters(maxShoulderCm)
+    const minShoulderPx = minShoulderM * ppm
+    const maxShoulderPx = maxShoulderM * ppm
 
-    const minSpeedPxPerFrame = minSpeedPxS / FPS
-    const maxSpeedPxPerFrame = maxSpeedPxS / FPS
+    // Speed in m/s
+    const minSpeed = cmpsToMps(minSpeedCmS)
+    const maxSpeed = cmpsToMps(maxSpeedCmS)
+    this.maxSpeedMps = random(minSpeed, maxSpeed)
+    this.minSpeedMps = this.maxSpeedMps * 0.5
+
+    // Convert speeds to px/s
+    this.maxSpeed = this.maxSpeedMps * ppm
+    this.minSpeed = this.minSpeedMps * ppm
+
+    // Acceleration capacity (px/s²)
+    this.maxAccel = this.maxSpeed * 0.5 // tweak factor
 
     this.major = random(minShoulderPx, maxShoulderPx)
     this.minor = (this.major * 2) / 3
-    this.maxSpeed = random(minSpeedPxPerFrame, maxSpeedPxPerFrame)
-    this.minSpeed = this.maxSpeed * 0.5
-    this.maxForce = this.maxSpeed * 0.5
 
-    this.seeing_Distance = this.major * 3
+    this.seeing_Distance = this.major * 5
     this.wanderTheta = 0.0
     this.recentPositions = []
     this.stuckFrames = 0
     this.activity = null
     this.meetingPropensity = random(0.1)
     this.in_meeting = false
+    this.in_fov = new Set()
+    this.id = nextPersonId()
   }
 
   show () {
@@ -49,23 +58,10 @@ class Person {
     stroke(127, 127)
     line(0, 0, this.seeing_Distance * 0.3, 0)
     pop()
-
-    if (
-      this.activity &&
-      this.activity.currentMove &&
-      this.activity.currentMove.finalTargetWaypoint
-    ) {
-      fill(0, 200, 0, 150)
-      noStroke()
-      circle(
-        this.activity.currentMove.finalTargetWaypoint.x,
-        this.activity.currentMove.finalTargetWaypoint.y,
-        15
-      )
-    }
   }
 
   applyForce (f) {
+    // f is in px/s²
     this.acceleration.add(f)
   }
 }
