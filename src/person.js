@@ -9,7 +9,7 @@ class Person {
     maxSpeedCmS
   ) {
     this.position = createVector(x, y)
-    this.velocity = createVector(random(-1, 1), random(-1, 1)) // px/s
+    this.velocity = createVector() // px/s
     this.acceleration = createVector(0, 0) // px/s²
 
     // Shoulder in meters → convert to pixels

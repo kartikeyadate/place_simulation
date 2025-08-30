@@ -329,8 +329,8 @@ class Move {
       this.person.velocity.mag(),
       this.person.minSpeed,
       this.person.maxSpeed,
-      this.person.seeing_Distance * 3,
-      this.person.seeing_Distance * 6
+      this.person.seeing_Distance * 4,
+      this.person.seeing_Distance * 7
     )
 
     let steering = createVector(0, 0)
@@ -452,8 +452,8 @@ class Move {
   showTarget () {
     if (this.finalTargetWaypoint) {
       push()
-      noFill()
-      stroke(0, 255, 0)
+      noStroke()
+      fill(0, 255, 0, 127)
       strokeWeight(2)
       ellipse(this.finalTargetWaypoint.x, this.finalTargetWaypoint.y, 15, 15)
       pop()

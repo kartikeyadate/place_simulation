@@ -14,6 +14,7 @@ let img, locations
 let peopleManager
 let spaceManager
 let coordsPara, frPara
+let spaceScalePara
 let maxAgents = 40
 let tempwp = null
 let makingwp = false
@@ -22,7 +23,7 @@ let running = true
 let stopButton
 
 let personCountP
-let busynessSlider
+let busynessSlider, busynessSliderP
 let currentSpawnRateP
 let showHeatMap = true
 let heatMapCheckBox
@@ -62,6 +63,10 @@ function setup () {
   coordsPara.position(20, img.height + 20)
   frPara = createP('Frame rate is 0')
   frPara.position(20, img.height + 40)
+  spaceScalePara = createP(`Spatial Scale: 0 pixels per meter`)
+  spaceScalePara.position(20, img.height + 100)
+  timeScalePara = createP(`Time Scale: 0 frames per second`)
+  timeScalePara.position(20, img.height + 120)
 
   // /*uncomment this for part 5 of the howto
   heatMapCheckBox = createCheckbox('Show Heatmap', true)
@@ -79,8 +84,10 @@ function setup () {
   currentSpawnRateP = createP('Arrivals/min (derived): 0')
   currentSpawnRateP.position(20, img.height + 80)
 
+  busynessSliderP = createP(`Busyness Slider:`)
+  busynessSliderP.position(width - 350, img.height + 7)
   busynessSlider = createSlider(0.5, 2.0, 1.0, 0.01)
-  busynessSlider.position(width - 350, img.height + 25)
+  busynessSlider.position(width - 350, img.height + 40)
   busynessSlider.style('width', '200px')
 
   spaceManager.setupEnvironment()
@@ -122,6 +129,8 @@ function draw () {
 
   coordsPara.html(`Mouse is at (` + mouseX + `, ` + mouseY + `)`)
   frPara.html('Frame rate is ' + frameRate().toFixed(1) + ' frames per second')
+  spaceScalePara.html(`Spatial Scale: ${pixelsPerMeter} pixels per meter.`)
+  timeScalePara.html(`Time Scale: ${FPS} frames per second.`)
 
   // /* uncomment this for part 5 of the howto
   personCountP.html(`Total persons: ${peopleManager.persons.length}`)
