@@ -82,7 +82,7 @@ class Move {
     const dist = p5.Vector.dist(this.person.position, this.finalTargetWaypoint)
 
     // Use body size as tolerance (half shoulder span feels natural)
-    const tolerance = this.person.major * 0.5
+    const tolerance = this.person.major
 
     // Option A: close enough
     if (dist < tolerance) return true
