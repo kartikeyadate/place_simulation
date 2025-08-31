@@ -14,6 +14,7 @@ let img, locations
 let peopleManager
 let spaceManager
 let coordsPara, frPara
+let spaceScalePara
 let maxAgents = 40
 let tempwp = null
 let makingwp = false
@@ -22,16 +23,18 @@ let running = true
 let stopButton
 
 let personCountP
-let busynessSlider
+let busynessSlider, busynessSliderP
 let currentSpawnRateP
 let showHeatMap = true
+let showAllPaths = true
 let heatMapCheckBox
+let pathCheckBox
 
 // --------------------
 // p5 lifecycle
 // --------------------
 function preload () {
-  img = loadImage('resources/plan_alt_1.png')
+  img = loadImage('resources/plan_alt_1.jpg')
   locations = loadJSON('resources/location_map.json')
 }
 
@@ -62,12 +65,22 @@ function setup () {
   coordsPara.position(20, img.height + 20)
   frPara = createP('Frame rate is 0')
   frPara.position(20, img.height + 40)
+  spaceScalePara = createP(`Spatial Scale: 0 pixels per meter`)
+  spaceScalePara.position(20, img.height + 100)
+  timeScalePara = createP(`Time Scale: 0 frames per second`)
+  timeScalePara.position(20, img.height + 120)
 
   // /*uncomment this for part 5 of the howto
   heatMapCheckBox = createCheckbox('Show Heatmap', true)
   heatMapCheckBox.position(width / 2, img.height + 20)
   heatMapCheckBox.changed(() => {
     showHeatMap = heatMapCheckBox.checked()
+  })
+
+  pathCheckBox = createCheckbox('Show All Paths', true)
+  pathCheckBox.position(width / 2, img.height + 40)
+  pathCheckBox.changed(() => {
+    showAllPaths = pathCheckBox.checked()
   })
 
   spaceManager = new SpaceManager(img, locations, k, 5)
@@ -79,8 +92,10 @@ function setup () {
   currentSpawnRateP = createP('Arrivals/min (derived): 0')
   currentSpawnRateP.position(20, img.height + 80)
 
-  busynessSlider = createSlider(0.5, 2.0, 1.0, 0.01)
-  busynessSlider.position(width - 350, img.height + 25)
+  busynessSliderP = createP(`Busyness Slider:`)
+  busynessSliderP.position(width - 350, img.height + 7)
+  busynessSlider = createSlider(0.0, 4.0, 1.0, 0.01)
+  busynessSlider.position(width - 350, img.height + 40)
   busynessSlider.style('width', '200px')
 
   spaceManager.setupEnvironment()
@@ -111,17 +126,27 @@ function draw () {
     if (running) {
       peopleManager.run()
     }
-
-    peopleManager.show()
+    peopleManager.showPeople()
+    if (showAllPaths) {
+      peopleManager.showPaths()
+    }
   } else if (currentMode === SETUP) {
     spaceManager.showWaypoints()
   }
   pop()
 
   // uncomment this for part 5 of the howto. */
-
-  coordsPara.html(`Mouse is at (` + mouseX + `, ` + mouseY + `)`)
+  let pxCol = img.get(floor(mouseX), floor(mouseY))
+  coordsPara.html(
+    `Mouse is at (` + mouseX + `, ` + mouseY + `). Color is ${pxCol[0]}.`
+  )
   frPara.html('Frame rate is ' + frameRate().toFixed(1) + ' frames per second')
+  spaceScalePara.html(`Spatial Scale: ${pixelsPerMeter} pixels per meter.`)
+  timeScalePara.html(
+    `Time Scale: ${FPS} frames per second. Simulation is sped up ${(
+      frameRate() / FPS
+    ).toFixed(1)} times.`
+  )
 
   // /* uncomment this for part 5 of the howto
   personCountP.html(`Total persons: ${peopleManager.persons.length}`)

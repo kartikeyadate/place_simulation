@@ -163,13 +163,13 @@ class Quadtree {
     let w = this.boundary.w
     let h = this.boundary.h
 
-    let ner = new Rectangle(x + w / 2, y - h / 2, w / 2, h / 2)
+    let ner = new QtRt(x + w / 2, y - h / 2, w / 2, h / 2)
     this.ne = new Quadtree(ner, this.capacity)
-    let nwr = new Rectangle(x - w / 2, y - h / 2, w / 2, h / 2)
+    let nwr = new QtRt(x - w / 2, y - h / 2, w / 2, h / 2)
     this.nw = new Quadtree(nwr, this.capacity)
-    let ser = new Rectangle(x + w / 2, y + h / 2, w / 2, h / 2)
+    let ser = new QtRt(x + w / 2, y + h / 2, w / 2, h / 2)
     this.se = new Quadtree(ser, this.capacity)
-    let swr = new Rectangle(x - w / 2, y + h / 2, w / 2, h / 2)
+    let swr = new QtRt(x - w / 2, y + h / 2, w / 2, h / 2)
     this.sw = new Quadtree(swr, this.capacity)
 
     this.divided = true
@@ -194,6 +194,21 @@ class Quadtree {
       }
     }
     return found
+  }
+
+  clear () {
+    this.points = []
+    if (this.divided) {
+      this.ne.clear()
+      this.nw.clear()
+      this.se.clear()
+      this.sw.clear()
+      this.ne = null
+      this.nw = null
+      this.se = null
+      this.sw = null
+      this.divided = false
+    }
   }
 
   show () {

@@ -67,7 +67,7 @@ class SpaceManager {
         entryLoc.selectWeightedWaypoint()
         this.entryLocations.push(entryLoc)
         this.entryLocationList.push(entryLoc.name)
-        this.locationGraph.addNode(entryLoc)
+        //this.locationGraph.addNode(entryLoc)
         this.locationList.push(entryLoc)
       }
     }
@@ -89,7 +89,7 @@ class SpaceManager {
           this.subGoalLocations.push(subGoalLoc)
           this.subGoalLocationList.push(subGoalLoc.name)
           this.locationList.push(subGoalLoc)
-          this.locationGraph.addNode(subGoalLoc)
+          //this.locationGraph.addNode(subGoalLoc)
           this.targetLocationList.push(subGoalLoc.name)
         }
       }
@@ -208,7 +208,12 @@ class SpaceManager {
       for (let j = i + 1; j < this.locationList.length; j++) {
         let a = this.locationList[i]
         let b = this.locationList[j]
-        if (a.waypoint && b.waypoint) {
+        if (
+          this.locationGraph.isANode(a) &&
+          this.locationGraph.isANode(b) &&
+          a.waypoint &&
+          b.waypoint
+        ) {
           if (this.visibilityTest(a.waypoint, b.waypoint)) {
             let d = p5.Vector.dist(a.waypoint, b.waypoint)
             this.locationGraph.addEdge(a.name, b.name, d)
@@ -276,24 +281,24 @@ class SpaceManager {
         if (check_x >= 0 && check_x < this.locationGrid.length) {
           if (check_y >= 0 && check_y < this.locationGrid[check_x].length) {
             let colorValue = this.locationGrid[check_x][check_y]
-            if (this.walkableColors.includes(colorValue.toString())) {
-              return false // at least one neighbor is walkable
+            let isWalkable = this.walkableColors.includes(colorValue.toString())
+            if (colorValue >= 200) {
+              return true
             }
           }
         }
       }
     }
-    return true // otherwise obstacle
+    return false // otherwise obstacle
   }
 
   visibilityTest (a, b) {
     let steps = p5.Vector.dist(a, b)
-
+    let visib = true
     for (let i = 0; i <= steps; i++) {
       let t = i / steps
       let x = lerp(a.x, b.x, t)
       let y = lerp(a.y, b.y, t)
-
       if (this.isObstacle(x, y)) {
         return false
       }
@@ -315,7 +320,7 @@ class SpaceManager {
   }
 
   makeQTree () {
-    this.qtboundary = rect(0, 0, img.width, img.height)
+    this.qtboundary = new QtRt(0, 0, img.width, img.height)
     this.qt = new Quadtree(this.qtboundary, this.qtcapacity)
   }
 }

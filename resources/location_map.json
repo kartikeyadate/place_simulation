@@ -62,7 +62,7 @@
     "115": {
         "name": "Shop A zone",
         "walkable": true,
-        "traffic": 22,
+        "traffic": 100,
         "wait": {
             "type": "time",
             "min": 8,
@@ -72,7 +72,7 @@
     "117": {
         "name": "Shop C zone",
         "walkable": true,
-        "traffic": 25,
+        "traffic": 80,
         "wait": {
             "type": "time",
             "min": 10,
@@ -82,7 +82,7 @@
     "118": {
         "name": "Shop D zone",
         "walkable": true,
-        "traffic": 25,
+        "traffic": 90,
         "wait": {
             "type": "time",
             "min": 15,
@@ -93,7 +93,7 @@
         "name": "Shop D zone",
         "_comment": "'Traffic' refers to the number of seconds between two people arriving at this location, on average.",
         "walkable": true,
-        "traffic": 30,
+        "traffic": 120,
         "wait": {
             "type": "time",
             "min": 20,
@@ -103,7 +103,7 @@
     "113": {
         "name": "Shop F zone",
         "walkable": true,
-        "traffic": 60,
+        "traffic": 240,
         "wait": {
             "type": "time",
             "min": 10,
@@ -113,7 +113,7 @@
     "112": {
         "name": "Shop G zone",
         "walkable": true,
-        "traffic": 40,
+        "traffic": 75,
         "wait": {
             "type": "time",
             "min": 10,
@@ -123,7 +123,7 @@
     "111": {
         "name": "Shop H zone",
         "walkable": true,
-        "traffic": 15,
+        "traffic": 90,
         "wait": {
             "type": "time",
             "min": 10,
@@ -134,7 +134,7 @@
         "name": "Kiosk A zone",
         "_comment": "'Traffic' refers to the number of seconds between two people arriving at this location, on average.",
         "walkable": true,
-        "traffic": 20,
+        "traffic": 60,
         "wait": {
             "type": "time",
             "min": 10,
@@ -144,7 +144,7 @@
     "109": {
         "name": "Kiosk B zone",
         "walkable": true,
-        "traffic": 20,
+        "traffic": 70,
         "wait": {
             "type": "time",
             "min": 10,
@@ -154,7 +154,7 @@
     "108": {
         "name": "Kiosk C zone",
         "walkable": true,
-        "traffic": 20,
+        "traffic": 65,
         "wait": {
             "type": "time",
             "min": 10,
@@ -164,7 +164,7 @@
     "107": {
         "name": "Kiosk D zone",
         "walkable": true,
-        "traffic": 20,
+        "traffic": 90,
         "wait": {
             "type": "time",
             "min": 10,
@@ -174,7 +174,7 @@
     "106": {
         "name": "Bus Stop zone",
         "walkable": true,
-        "traffic": 20,
+        "traffic": 50,
         "wait": {
             "type": "time",
             "min": 8,
