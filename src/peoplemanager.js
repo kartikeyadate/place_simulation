@@ -19,8 +19,53 @@ class PeopleManager {
     this.initAgents(num)
   }
 
+  updateAllPerceptions () {
+    this.populate_qtree()
+    for (let p of this.persons) {
+      let c = p.perceptionCone
+      c.x = p.position.x
+      c.y = p.position.y
+      c.angle = p.update_heading(c)
+      c.dir = createVector(cos(c.angle), sin(c.angle))
+      c.cosFov = cos(c.fov)
+      c.rSquared = c.r * c.r
+
+      //reset currentPercievedThings.
+      p.currentlyPerceivedThings.dynamic = []
+      p.currentlyPerceivedThings.targets = []
+      p.currentlyPerceivedThings.onPath = []
+
+      let pathSet = new Set()
+      if (p.activity && p.activity.currentMove && p.activity.currentMove.path) {
+        for (let wp of p.activity.currentMove.path) {
+          pathSet.add(`${floor(wp.x)},${floor(wp.y)}`)
+        }
+      }
+
+      let hits = this.spaceManager.qt.query(c) || []
+      for (let h of hits) {
+        let obj = h.userData
+        if (obj !== p) {
+          if (obj instanceof Person) {
+            p.currentlyPerceivedThings.dynamic.push(obj)
+          } else if (obj instanceof Location) {
+            p.currentlyPerceivedThings.targets.push(obj)
+          }
+
+          if (obj.waypoint) {
+            let key = `${floor(obj.waypoint.x)},${floor(obj.waypoint.y)}`
+            if (pathSet.has(key)) {
+              p.currentlyPerceivedThings.onPath.push(obj)
+            }
+          }
+        }
+      }
+    }
+  }
+
   run () {
     this.poissonSpawn()
+    this.updateAllPerceptions()
     for (let i = this.persons.length - 1; i >= 0; i--) {
       this.persons[i].activity.run(this.obstacles)
       if (this.persons[i].activity.completed) {
@@ -34,6 +79,7 @@ class PeopleManager {
   show () {
     for (let person of this.persons) {
       person.show()
+      person.activity?.currentMove?.showPath?.()
       person.activity?.currentMove?.showTarget?.()
     }
   }
@@ -86,6 +132,7 @@ class PeopleManager {
             ? 1 / loc.traffic
             : 0
       )
+
       if (!targetLoc) continue
 
       targetLoc.selectWeightedWaypoint()
@@ -168,9 +215,16 @@ class PeopleManager {
   }
 
   populate_qtree () {
+    this.spaceManager.qt.clear()
     for (let p of this.persons) {
       let pt = new QtPt(p.position.x, p.position.y, p)
       this.spaceManager.qt.insert(pt)
+    }
+    for (let loc of this.spaceManager.locationList) {
+      if (loc.waypoint) {
+        let pt = new QtPt(loc.waypoint.x, loc.waypoint.y, loc)
+        this.spaceManager.qt.insert(pt)
+      }
     }
   }
 

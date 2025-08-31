@@ -26,7 +26,9 @@ let personCountP
 let busynessSlider, busynessSliderP
 let currentSpawnRateP
 let showHeatMap = true
+let showAllPaths = true
 let heatMapCheckBox
+let pathCheckBox
 
 // --------------------
 // p5 lifecycle
@@ -73,6 +75,12 @@ function setup () {
   heatMapCheckBox.position(width / 2, img.height + 20)
   heatMapCheckBox.changed(() => {
     showHeatMap = heatMapCheckBox.checked()
+  })
+
+  pathCheckBox = createCheckbox('Show All Paths', true)
+  pathCheckBox.position(width / 2, img.height + 40)
+  pathCheckBox.changed(() => {
+    showAllPaths = heatMapCheckBox.checked()
   })
 
   spaceManager = new SpaceManager(img, locations, k, 5)
@@ -130,7 +138,11 @@ function draw () {
   coordsPara.html(`Mouse is at (` + mouseX + `, ` + mouseY + `)`)
   frPara.html('Frame rate is ' + frameRate().toFixed(1) + ' frames per second')
   spaceScalePara.html(`Spatial Scale: ${pixelsPerMeter} pixels per meter.`)
-  timeScalePara.html(`Time Scale: ${FPS} frames per second.`)
+  timeScalePara.html(
+    `Time Scale: ${FPS} frames per second. Simulation is sped up ${(
+      frameRate() / FPS
+    ).toFixed(1)} times.`
+  )
 
   // /* uncomment this for part 5 of the howto
   personCountP.html(`Total persons: ${peopleManager.persons.length}`)

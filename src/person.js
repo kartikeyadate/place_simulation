@@ -28,13 +28,35 @@ class Person {
     this.maxSpeed = this.maxSpeedMps * ppm
     this.minSpeed = this.minSpeedMps * ppm
 
+    // --- Perception cone (canonical perception object) ---
+    // radius = 6 meters -> convert to pixels using pixelsPerMeter
+    const perceptionRadiusPx = 6 * pixelsPerMeter
+    // QtCone expects fov = half-angle in radians; total FOV = 120° => half-angle = 60° = PI/3
+    const coneHalfAngle = PI / 3
+
+    this.perceptionCone = new QtCone(
+      this.position.x,
+      this.position.y,
+      // initial angle — use current velocity heading if non-zero, otherwise 0
+      this.velocity && this.velocity.mag && this.velocity.mag() > 0
+        ? this.velocity.heading()
+        : 0,
+      coneHalfAngle,
+      perceptionRadiusPx
+    )
+
+    this.currentlyPerceivedThings = {
+      dynamic: [], //dynamic obstacles
+      targets: [], //waypoints, meeting points, goals.
+      onPath: [] //locations which are on current move path.
+    }
+
     // Acceleration capacity (px/s²)
     this.maxAccel = this.maxSpeed * 0.5 // tweak factor
 
     this.major = random(minShoulderPx, maxShoulderPx)
     this.minor = (this.major * 2) / 3
 
-    this.seeing_Distance = this.major * 5
     this.wanderTheta = 0.0
     this.recentPositions = []
     this.stuckFrames = 0
@@ -43,6 +65,49 @@ class Person {
     this.in_meeting = false
     this.in_fov = new Set()
     this.id = nextPersonId()
+  }
+
+  updatePerceptionCone (qt) {
+    //update the position and heading of the perception cone.
+    let c = this.perceptionCone
+    c.x = this.position.x
+    c.y = this.position.y
+    c.angle = this.update_heading(c)
+    c.dir = createVector(cos(c.angle), sin(c.angle))
+    c.cosFov = cos(c.fov)
+    c.rSquared = c.r * c.r
+
+    //reset currentPercievedThings.
+    this.currentlyPerceivedThings.dynamic = []
+    this.currentlyPerceivedThings.targets = []
+    this.currentlyPerceivedThings.onPath = []
+
+    if (!qt) return
+
+    let hits = qt.query(c) || []
+    for (let h of hits) {
+      if (!h || !h.userData) {
+        continue
+      }
+      let obj = h.userData
+      if (obj === this) {
+        continue
+      }
+
+      if (obj instanceof Person) {
+        this.currentlyPerceivedThings.dynamic.push(obj)
+      } else if (obj instanceof Location) {
+        this.currentlyPerceivedThings.targets.push(obj)
+      }
+    }
+  }
+
+  update_heading (previous) {
+    if (this.velocity && this.velocity.mag() > 0) {
+      return this.velocity.heading()
+    } else {
+      return previous.angle || 0
+    }
   }
 
   show () {

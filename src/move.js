@@ -79,6 +79,8 @@ class Move {
   }
 
   isFinished () {
+    if (!this.isMovingToFinalTarget) return false // 🔒 never finish early
+
     const dist = p5.Vector.dist(this.person.position, this.finalTargetWaypoint)
     const tolerance = this.person.major * 2
 
@@ -141,9 +143,9 @@ class Move {
       queueing: 1.2,
       cohesion: 0.25,
       alignment: 0.25,
-      seek: 1.8,
+      seek: 3.0,
       avoidStatic: 7.0,
-      avoidDynamic: 4.5,
+      avoidDynamic: 5.0,
       bounds: 2.0,
       wander: 0.08
     }
@@ -160,9 +162,9 @@ class Move {
 
     // 1. Prioritize avoidance when danger is imminent
     if (nearestDist > 0 && nearestDist < this.person.major * 2) {
-      weights.avoidStatic *= 2.0
-      weights.avoidDynamic *= 2.0
-      weights.seek *= 0.5
+      weights.avoidStatic *= 1.2
+      weights.avoidDynamic *= 1.2
+      weights.seek *= 0.8
     }
     // 2. Goal lock: near the goal → boost seek, suppress avoidance
     else if (goalDist < this.person.seeing_Distance) {
@@ -175,13 +177,14 @@ class Move {
 
     // 3. Handle crowding
     if (neighbors.length > 3) {
-      weights.queueing *= 1.5
-      weights.cohesion *= 1.2
+      weights.queueing *= 1.2
+      weights.cohesion *= 1.1
     }
 
     // 4. Far from goal → wander more
     if (goalDist > this.person.seeing_Distance * 5) {
       weights.wander *= 1.5
+      weights.seek *= 1.5
     }
 
     return weights
@@ -217,7 +220,10 @@ class Move {
     let forward = this.person.velocity.copy().normalize()
     let lookAhead = this.person.velocity.mag() * 0.8 // px
 
-    for (let other of neighbors) {
+    const dyn = this.person.currentlyPerceivedThings.dynamic
+    if (!dyn || dyn.length === 0) return steering
+
+    for (let other of dyn) {
       if (other === this.person) continue
 
       let offset = p5.Vector.sub(other.position, this.person.position)
@@ -235,13 +241,8 @@ class Move {
           )
 
           if (relVel > 0) {
-            // only if we're actually closing in
-            // Quadratic falloff → sharp when close, soft when farther
             let falloff = 1 / Math.pow(dist / this.person.major, 2)
-
             let strength = this.person.maxAccel * falloff
-
-            // Scale by relative speed so faster agents brake harder
             strength *= relVel / this.person.maxSpeed
 
             let brake = forward.copy().mult(-strength)
@@ -257,13 +258,15 @@ class Move {
   }
 
   cohesion (neighbors) {
-    let perceptionRadius = this.getSeeingDistance()
     let sum = createVector()
     let total = 0
 
-    for (let other of neighbors) {
+    const dyn = this.person.currentlyPerceivedThings.dynamic
+    if (!dyn || dyn.length === 0) return createVector(0, 0)
+
+    for (let other of dyn) {
       let d = p5.Vector.dist(this.person.position, other.position)
-      if (other !== this.person && d < perceptionRadius) {
+      if (other !== this.person && d < this.person.perceptionCone.r) {
         sum.add(other.position)
         total++
       }
@@ -272,9 +275,9 @@ class Move {
     if (total > 0) {
       sum.div(total)
       let desired = p5.Vector.sub(sum, this.person.position)
-      desired.setMag(this.person.maxSpeed) // desired vel
-      let steer = p5.Vector.sub(desired, this.person.velocity) // Δv
-      steer.mult(FPS) // accel
+      desired.setMag(this.person.maxSpeed)
+      let steer = p5.Vector.sub(desired, this.person.velocity)
+      steer.mult(FPS)
       steer.limit(this.person.maxAccel)
       return steer
     }
@@ -282,13 +285,15 @@ class Move {
   }
 
   alignment (neighbors) {
-    let perceptionRadius = this.getSeeingDistance()
     let sum = createVector()
     let total = 0
 
-    for (let other of neighbors) {
+    const dyn = this.person.currentlyPerceivedThings.dynamic
+    if (!dyn || dyn.length === 0) return createVector(0, 0)
+
+    for (let other of dyn) {
       let d = p5.Vector.dist(this.person.position, other.position)
-      if (other !== this.person && d < perceptionRadius) {
+      if (other !== this.person && d < this.person.perceptionCone.r) {
         sum.add(other.velocity)
         total++
       }
@@ -311,8 +316,8 @@ class Move {
     if (d === 0) return createVector(0, 0)
 
     let speed = this.person.maxSpeed
-    if (arrive && d < this.person.seeing_Distance) {
-      speed = map(d, 0, this.person.seeing_Distance, 0, this.person.maxSpeed)
+    if (arrive && d < this.person.perceptionCone.r) {
+      speed = map(d, 0, this.person.perceptionCone.r, 0, this.person.maxSpeed)
     }
     desired.setMag(speed)
     let steer = p5.Vector.sub(desired, this.person.velocity)
@@ -322,13 +327,17 @@ class Move {
   }
 
   avoidStaticObstacles () {
-    let rayAngles = [0, -50, 50] // degrees
+    let rayAngles = [
+      0,
+      -this.person.perceptionCone.fov / 2,
+      this.person.perceptionCone.fov / 2
+    ]
     let rayLength = map(
       this.person.velocity.mag(),
       this.person.minSpeed,
       this.person.maxSpeed,
-      this.person.seeing_Distance * 4,
-      this.person.seeing_Distance * 7
+      this.person.perceptionCone.r * 0.5,
+      this.person.perceptionCone.r * 1.25
     )
 
     let steering = createVector(0, 0)
@@ -345,17 +354,11 @@ class Move {
         let probe = p5.Vector.lerp(this.person.position, aheadPoint, t)
         if (spaceManager.isObstacle(probe.x, probe.y)) {
           let d = p5.Vector.dist(this.person.position, probe)
-
-          // Repulsion away from obstacle
           let away = p5.Vector.sub(this.person.position, probe)
           let strength = map(d, 0, rayLength, this.person.maxAccel, 0)
-
-          // Scale side rays less than forward ray
           let angleWeight = a === 0 ? 1.0 : 0.7
-
           away.setMag(strength * angleWeight)
           steering.add(away)
-
           hits++
           break
         }
@@ -370,33 +373,64 @@ class Move {
     return steering
   }
 
-  // For dynamic (other agents)
-  evaluate_obstacles (obstacles) {
+  evaluate_obstacles () {
+    const dyn = this.person.currentlyPerceivedThings.dynamic
+    if (!dyn || dyn.length === 0) {
+      return createVector(0, 0)
+    }
+
     let nearest = null
     let minD = Infinity
-    for (let o of obstacles) {
+
+    // Adaptive lookahead time based on current speed
+    // Faster → longer horizon, slower → shorter
+    const minHorizon = 5 // frames (≈0.1s at 60 FPS)
+    const maxHorizon = 30 // frames (≈0.5s at 60 FPS)
+    const horizonFrames = map(
+      speed,
+      this.person.minSpeed,
+      this.person.maxSpeed,
+      minHorizon,
+      maxHorizon,
+      true
+    )
+
+    const dt = 1 / FPS
+    const lookaheadTime = horizonFrames * dt
+
+    for (let o of dyn) {
       if (o === this.person) continue
-      let d = p5.Vector.dist(this.person.position, o.position)
+
+      // predict other’s position at lookaheadTime
+      let futurePos = p5.Vector.add(
+        o.position,
+        p5.Vector.mult(o.velocity, lookaheadTime)
+      )
+
+      let d = p5.Vector.dist(this.person.position, futurePos)
+
       if (d < minD) {
         minD = d
-        nearest = o
+        nearest = { obj: o, predicted: futurePos }
       }
     }
-    if (nearest && minD < this.person.seeing_Distance) {
-      let away = p5.Vector.sub(this.person.position, nearest.position)
+
+    if (nearest && minD < this.person.perceptionCone.r) {
+      let away = p5.Vector.sub(this.person.position, nearest.predicted)
       let strength = this.person.maxAccel * (1 / (minD / this.person.major))
       away.setMag(Math.min(strength, this.person.maxAccel * 2.5))
       return away
     }
+
     return createVector(0, 0)
   }
 
   wander () {
     let wanderPoint = this.person.velocity.copy()
-    wanderPoint.setMag(this.person.seeing_Distance)
+    wanderPoint.setMag(this.person.perceptionCone.r)
     wanderPoint.add(this.person.position)
 
-    let wanderRadius = this.person.seeing_Distance * 0.5
+    let wanderRadius = this.person.perceptionCone.r * 0.5
     let angle = this.person.wanderTheta + this.person.velocity.heading()
     wanderPoint.add(wanderRadius * cos(angle), wanderRadius * sin(angle))
 
@@ -447,13 +481,43 @@ class Move {
     return pruned
   }
 
+  showPath () {
+    if (this.path && this.path.length > 1) {
+      push()
+      noFill()
+      stroke(0, 150, 255, 100) // light blue
+      strokeWeight(2)
+      beginShape()
+      for (let wp of this.path) {
+        vertex(wp.x, wp.y)
+      }
+      endShape()
+      pop()
+
+      for (let i = 0; i < this.path.length; i++) {
+        let wp = this.path[i]
+        push()
+        noStroke()
+        fill(i === this.pathIndex ? 'orange' : 'cyan')
+        ellipse(wp.x, wp.y, 6, 6)
+        pop()
+      }
+    }
+  }
+
   showTarget () {
     if (this.finalTargetWaypoint) {
       push()
-      noStroke()
-      fill(0, 255, 0, 127)
       strokeWeight(2)
-      ellipse(this.finalTargetWaypoint.x, this.finalTargetWaypoint.y, 15, 15)
+      noFill()
+      if (this.isMovingToFinalTarget) {
+        stroke(0, 255, 0, 180)
+        fill(0, 255, 0, 80)
+      } else {
+        stroke(255, 0, 0, 180)
+        fill(255, 0, 0, 80)
+      }
+      ellipse(this.finalTargetWaypoint.x, this.finalTargetWaypoint.y, 18, 18)
       pop()
     }
   }

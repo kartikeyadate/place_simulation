@@ -196,6 +196,21 @@ class Quadtree {
     return found
   }
 
+  clear () {
+    this.points = []
+    if (this.divided) {
+      this.ne.clear()
+      this.nw.clear()
+      this.se.clear()
+      this.sw.clear()
+      this.ne = null
+      this.nw = null
+      this.se = null
+      this.sw = null
+      this.divided = false
+    }
+  }
+
   show () {
     stroke(0, 150)
     strokeWeight(0.5)
