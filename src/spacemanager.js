@@ -315,7 +315,7 @@ class SpaceManager {
   }
 
   makeQTree () {
-    this.qtboundary = rect(0, 0, img.width, img.height)
+    this.qtboundary = new QtRt(0, 0, img.width, img.height)
     this.qt = new Quadtree(this.qtboundary, this.qtcapacity)
   }
 }

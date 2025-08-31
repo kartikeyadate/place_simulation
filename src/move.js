@@ -387,7 +387,7 @@ class Move {
     const minHorizon = 5 // frames (≈0.1s at 60 FPS)
     const maxHorizon = 30 // frames (≈0.5s at 60 FPS)
     const horizonFrames = map(
-      speed,
+      this.person.velocity.mag(),
       this.person.minSpeed,
       this.person.maxSpeed,
       minHorizon,
