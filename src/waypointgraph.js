@@ -70,6 +70,10 @@ class Graph {
     }
     return g
   }
+
+  isANode (loc) {
+    return loc.name in this.nodes
+  }
 }
 
 // ---------- A* ----------

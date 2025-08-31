@@ -1,7 +1,8 @@
 const SETUP = 'setup'
 const SIMULATE = 'simulate'
 let currentMode = SIMULATE
-const k = 60 // the desired number of waypoints
+const k = 36 // the desired number of waypoints
+const WALKABILITY_THRESHOLD = 183
 
 //scaling pixel <-> m, and frame <-> second
 const FPS = 20

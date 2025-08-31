@@ -45,6 +45,9 @@ class Person {
       perceptionRadiusPx
     )
 
+    this.perceptionCircle = {
+      r: this.perceptionCone.r * 0.6 // smaller than cone radius, tunable
+    }
     this.currentlyPerceivedThings = {
       dynamic: [], //dynamic obstacles
       targets: [], //waypoints, meeting points, goals.

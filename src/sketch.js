@@ -34,7 +34,7 @@ let pathCheckBox
 // p5 lifecycle
 // --------------------
 function preload () {
-  img = loadImage('resources/plan_alt_1.png')
+  img = loadImage('resources/plan_alt_1.jpg')
   locations = loadJSON('resources/location_map.json')
 }
 
@@ -80,7 +80,7 @@ function setup () {
   pathCheckBox = createCheckbox('Show All Paths', true)
   pathCheckBox.position(width / 2, img.height + 40)
   pathCheckBox.changed(() => {
-    showAllPaths = heatMapCheckBox.checked()
+    showAllPaths = pathCheckBox.checked()
   })
 
   spaceManager = new SpaceManager(img, locations, k, 5)
@@ -126,16 +126,20 @@ function draw () {
     if (running) {
       peopleManager.run()
     }
-
-    peopleManager.show()
+    peopleManager.showPeople()
+    if (showAllPaths) {
+      peopleManager.showPaths()
+    }
   } else if (currentMode === SETUP) {
     spaceManager.showWaypoints()
   }
   pop()
 
   // uncomment this for part 5 of the howto. */
-
-  coordsPara.html(`Mouse is at (` + mouseX + `, ` + mouseY + `)`)
+  let pxCol = img.get(floor(mouseX), floor(mouseY))
+  coordsPara.html(
+    `Mouse is at (` + mouseX + `, ` + mouseY + `). Color is ${pxCol[0]}.`
+  )
   frPara.html('Frame rate is ' + frameRate().toFixed(1) + ' frames per second')
   spaceScalePara.html(`Spatial Scale: ${pixelsPerMeter} pixels per meter.`)
   timeScalePara.html(
