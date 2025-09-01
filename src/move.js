@@ -63,11 +63,10 @@ class Move {
     }
 
     this.path = namePath.map(n => g.getNode(n).waypoint)
-    /*
+
     if (this.path.length >= 2) {
       this.path = this._pruneLineOfSight(this.path)
     }
-      */
 
     if (this.path.length > 1) {
       this.pathIndex = 1
@@ -226,48 +225,6 @@ class Move {
     }
 
     return combined
-  }
-
-  giveWay () {
-    let steering = createVector(0, 0)
-    let total = 0
-
-    // only check nearby persons in the perceptionCircle
-    for (let other of this.currentlyPerceivedThings.withinCircle) {
-      if (other === this) continue
-
-      let offset = p5.Vector.sub(this.position, other.position)
-      let d = offset.mag()
-
-      if (d > 0 && d < this.perceptionCircle.r) {
-        let away = offset.copy().normalize()
-        let strength = map(d, 0, this.perceptionCircle.r, this.maxAccel, 0)
-        away.mult(strength)
-
-        steering.add(away)
-        total++
-      }
-    }
-
-    if (total > 0) {
-      steering.div(total)
-      steering.limit(this.maxAccel * 0.5) // softer nudge than dynamic avoidance
-    }
-
-    return steering
-  }
-
-  // --- Return to goal behaviour (drifts back to original waiting spot) ---
-  returnToGoal (goalPos) {
-    let desired = p5.Vector.sub(goalPos, this.position)
-    let d = desired.mag()
-
-    if (d < 1) return createVector(0, 0) // already at goal
-
-    desired.setMag(map(d, 0, this.perceptionCircle.r, 0, this.maxSpeed * 0.5))
-    let steer = p5.Vector.sub(desired, this.velocity)
-    steer.limit(this.maxAccel * 0.3) // gentle correction
-    return steer
   }
 
   // --- Queueing (acceleration) ---
@@ -523,19 +480,6 @@ class Move {
     else if (this.person.position.y > height - margin)
       steer.y = -this.person.maxAccel
     return steer
-  }
-
-  getSeeingDistance () {
-    const base = pixelsPerMeter
-    const scale = map(
-      this.person.velocity.mag(),
-      this.person.minSpeed,
-      this.person.maxSpeed,
-      2,
-      6,
-      true
-    )
-    return base * scale
   }
 
   _pruneLineOfSight (vecs) {

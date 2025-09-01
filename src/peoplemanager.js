@@ -26,12 +26,14 @@ class PeopleManager {
       let c = p.perceptionCone
       c.x = p.position.x
       c.y = p.position.y
-      c.angle = p.update_heading(c)
+      if (p.activity?.state === 'MOVING') {
+        c.angle = p.update_heading(c) // freeze heading if not moving
+      }
       c.dir = createVector(cos(c.angle), sin(c.angle))
       c.cosFov = cos(c.fov)
       c.rSquared = c.r * c.r
 
-      // --- Update circle geometry (no angle needed) ---
+      // --- Update circle geometry ---
       let circ = p.perceptionCircle
       circ.x = p.position.x
       circ.y = p.position.y
@@ -41,27 +43,28 @@ class PeopleManager {
       p.currentlyPerceivedThings.dynamic = []
       p.currentlyPerceivedThings.targets = []
       p.currentlyPerceivedThings.onPath = []
-      p.currentlyPerceivedThings.withinCircle = [] // 👈 nearby persons when waiting
+      p.currentlyPerceivedThings.withinCircle = [] // 👈 nearby persons when waiting/meeting
 
       // --- Path lookup cache ---
       let pathSet = new Set()
-      if (p.activity && p.activity.currentMove && p.activity.currentMove.path) {
+      if (p.activity?.currentMove?.path) {
         for (let wp of p.activity.currentMove.path) {
           pathSet.add(`${floor(wp.x)},${floor(wp.y)}`)
         }
       }
 
-      // --- Query once using the cone bounding box (bigger search window) ---
+      // --- Query quadtree once using cone's bounding box ---
       let hits = this.spaceManager.qt.query(c) || []
       for (let h of hits) {
+        if (!h?.userData) continue
         let obj = h.userData
         if (obj === p) continue
 
-        // ✅ Cone-based checks
+        // Cone-based perception
         if (obj instanceof Person) {
           p.currentlyPerceivedThings.dynamic.push(obj)
 
-          // 🔄 Circle-based check only for Persons
+          // 🔄 Circle-based perception (only Persons matter here)
           const dx = p.position.x - obj.position.x
           const dy = p.position.y - obj.position.y
           const dSq = dx * dx + dy * dy
@@ -72,7 +75,7 @@ class PeopleManager {
           p.currentlyPerceivedThings.targets.push(obj)
         }
 
-        // ✅ Path membership check
+        // Path membership check
         if (obj.waypoint) {
           let key = `${floor(obj.waypoint.x)},${floor(obj.waypoint.y)}`
           if (pathSet.has(key)) {
@@ -89,7 +92,7 @@ class PeopleManager {
     for (let i = this.persons.length - 1; i >= 0; i--) {
       this.persons[i].activity.run(this.obstacles)
       if (this.persons[i].activity.completed) {
-        console.log('Removing ' + this.persons[i].id)
+        //console.log('Removing ' + this.persons[i].id)
         this.persons.splice(i, 1)
       }
     }

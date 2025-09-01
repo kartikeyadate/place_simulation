@@ -28,6 +28,9 @@ class Activity {
       this.waitTimer = activity.duration
       this.state = 'WAITING'
       this.person.velocity.mult(0)
+      if (!activity.waypoint) {
+        activity.waypoint = this.person.position.copy()
+      }
     } else if (activity.type === 'meet') {
       this.meet = new Meet(activity.partners, activity.duration, activity.kind)
       this.state = 'MEETING'
@@ -46,6 +49,22 @@ class Activity {
       }
     } else if (this.state === 'WAITING') {
       this.waitTimer--
+      let combined = createVector(0, 0)
+      combined.add(this.person.giveWay().mult(1.8))
+      combined.add(
+        this.person
+          .returnToGoal(this.activities[this.currentActivityIndex].waypoint)
+          .mult(3.0)
+      )
+      this.person.applyForce(combined)
+
+      // usual physics update (Euler integration)
+      const dt = 1 / FPS
+      this.person.velocity.add(p5.Vector.mult(this.person.acceleration, dt))
+      this.person.velocity.limit(this.person.maxSpeed * 0.3) // 🔒 cap speed lower while waiting
+      this.person.velocity.mult(0.85)
+      this.person.position.add(p5.Vector.mult(this.person.velocity, dt))
+      this.person.acceleration.mult(0)
       if (this.waitTimer <= 0) {
         this.currentActivityIndex++
         this.startNextActivity()

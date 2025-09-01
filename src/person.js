@@ -30,7 +30,7 @@ class Person {
 
     // --- Perception cone (canonical perception object) ---
     // radius = 6 meters -> convert to pixels using pixelsPerMeter
-    const perceptionRadiusPx = 6 * pixelsPerMeter
+    const perceptionRadiusPx = 3 * pixelsPerMeter
     // QtCone expects fov = half-angle in radians; total FOV = 120° => half-angle = 60° = PI/3
     const coneHalfAngle = PI / 3
 
@@ -44,6 +44,7 @@ class Person {
       coneHalfAngle,
       perceptionRadiusPx
     )
+    this.perceptionCone.angle = 0
 
     this.perceptionCircle = {
       r: this.perceptionCone.r * 0.6 // smaller than cone radius, tunable
@@ -75,7 +76,9 @@ class Person {
     let c = this.perceptionCone
     c.x = this.position.x
     c.y = this.position.y
-    c.angle = this.update_heading(c)
+    if (this.activity?.state === 'MOVING') {
+      c.angle = this.update_heading(c)
+    }
     c.dir = createVector(cos(c.angle), sin(c.angle))
     c.cosFov = cos(c.fov)
     c.rSquared = c.r * c.r
@@ -113,7 +116,63 @@ class Person {
     }
   }
 
+  // --- Step aside gently when waiting ---
+  giveWay () {
+    let steering = createVector(0, 0)
+    let total = 0
+
+    for (let other of this.currentlyPerceivedThings.withinCircle) {
+      if (other === this) continue
+
+      let offset = p5.Vector.sub(this.position, other.position)
+      let d = offset.mag()
+
+      if (d > 0 && d < this.perceptionCircle.r) {
+        // Instead of directly away, bias to a sideways nudge
+        let away = offset.copy().normalize()
+
+        // Rotate ±90° randomly to break symmetry (avoids "dance")
+        away.rotate(random([HALF_PI, -HALF_PI]))
+
+        let strength = map(d, 0, this.perceptionCircle.r, this.maxAccel, 0)
+        away.mult(strength * 0.5) // softer than avoidance
+
+        steering.add(away)
+        total++
+      }
+    }
+
+    if (total > 0) {
+      steering.div(total)
+      steering.limit(this.maxAccel * 0.3) // gentle
+    }
+
+    return steering
+  }
+
+  // --- Drift back toward waiting goal when there's space ---
+  returnToGoal (goalPos) {
+    let desired = p5.Vector.sub(goalPos, this.position)
+    let d = desired.mag()
+
+    if (d < 1) return createVector(0, 0) // already at goal
+
+    // Only start drifting back if no one is pressing in the circle center
+    if (
+      this.currentlyPerceivedThings.withinCircle.length > 0 &&
+      d < this.perceptionCircle.r * 0.5
+    ) {
+      return createVector(0, 0) // hold position, don't fight
+    }
+
+    desired.setMag(map(d, 0, this.perceptionCircle.r, 0, this.maxSpeed * 0.3))
+    let steer = p5.Vector.sub(desired, this.velocity)
+    steer.limit(this.maxAccel * 0.2) // very gentle correction
+    return steer
+  }
+
   show () {
+    this.seeing_Distance = this.perceptionCone.r
     let angle = this.velocity.heading()
     fill(127)
     stroke(0)
@@ -124,7 +183,7 @@ class Person {
     fill(255)
     ellipse(0, 0, this.major / 3, (this.minor * 2) / 3)
     stroke(127, 127)
-    line(0, 0, this.seeing_Distance * 0.3, 0)
+    line(0, 0, this.seeing_Distance, 0)
     pop()
   }
 

@@ -33,9 +33,10 @@ let pathCheckBox
 // --------------------
 // p5 lifecycle
 // --------------------
+
 function preload () {
-  img = loadImage('resources/plan_alt_1.jpg')
-  locations = loadJSON('resources/location_map.json')
+  img = loadImage(`resources/${PLAN_FILE}`)
+  locations = loadJSON(`resources/${LOCATIONS_FILE}`)
 }
 
 function setup () {
@@ -83,7 +84,7 @@ function setup () {
     showAllPaths = pathCheckBox.checked()
   })
 
-  spaceManager = new SpaceManager(img, locations, k, 5)
+  spaceManager = new SpaceManager(img, locations, WAYPOINTS, 5)
   peopleManager = new PeopleManager(spaceManager)
 
   personCountP = createP(`Total persons: 0`)
@@ -101,7 +102,7 @@ function setup () {
   spaceManager.setupEnvironment()
   peopleManager.initAgents(5)
 
-  diagnosticGrid = new Grid(pixelsPerMeter)
+  diagnosticGrid = new Grid(pixelsPerMeter / 2)
 
   setMode(SETUP)
 
