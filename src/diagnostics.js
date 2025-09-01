@@ -30,7 +30,8 @@ class Grid {
 
     for (let i = 0; i < this.cols; i++) {
       for (let j = 0; j < this.rows; j++) {
-        let share = smooth[i][j] / (this.totalCount / (this.size * this.size))
+        let share =
+          (smooth[i][j] / (this.totalCount / (this.size * this.size))) ** 0.5
         if (share > 0) {
           let col = lerpColor(fromCol, toCol, share)
           col.setAlpha(100)

@@ -21,6 +21,7 @@ let makingwp = false
 let diagnosticGrid
 let running = true
 let stopButton
+let commuterTrainButton
 
 let personCountP
 let busynessSlider, busynessSliderP
@@ -102,6 +103,11 @@ function setup () {
   spaceManager.setupEnvironment()
   peopleManager.initAgents(5)
 
+  commuterTrainButton = createButton('Train Arrived')
+  commuterTrainButton.position(width / 3, img.height + 50)
+  commuterTrainButton.mousePressed(() => {
+    peopleManager.triggerCommuterArrival()
+  })
   diagnosticGrid = new Grid(pixelsPerMeter / 2)
 
   setMode(SETUP)
