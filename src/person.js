@@ -30,7 +30,7 @@ class Person {
 
     // --- Perception cone (canonical perception object) ---
     // radius = 6 meters -> convert to pixels using pixelsPerMeter
-    const perceptionRadiusPx = 6 * pixelsPerMeter
+    const perceptionRadiusPx = 3 * pixelsPerMeter
     // QtCone expects fov = half-angle in radians; total FOV = 120° => half-angle = 60° = PI/3
     const coneHalfAngle = PI / 3
 
@@ -172,6 +172,7 @@ class Person {
   }
 
   show () {
+    this.seeing_Distance = this.perceptionCone.r
     let angle = this.velocity.heading()
     fill(127)
     stroke(0)
@@ -182,7 +183,7 @@ class Person {
     fill(255)
     ellipse(0, 0, this.major / 3, (this.minor * 2) / 3)
     stroke(127, 127)
-    line(0, 0, this.seeing_Distance * 0.3, 0)
+    line(0, 0, this.seeing_Distance, 0)
     pop()
   }
 

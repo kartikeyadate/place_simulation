@@ -33,7 +33,7 @@ class Grid {
         let share = smooth[i][j] / (this.totalCount / (this.size * this.size))
         if (share > 0) {
           let col = lerpColor(fromCol, toCol, share)
-          col.setAlpha(200)
+          col.setAlpha(100)
           noStroke()
           fill(col)
           rect(i * this.size, j * this.size, this.size, this.size)

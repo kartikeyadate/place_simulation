@@ -62,7 +62,7 @@
     "115": {
         "name": "Shop A zone",
         "walkable": true,
-        "traffic": 100,
+        "traffic": 70,
         "wait": {
             "type": "time",
             "min": 8,
@@ -82,7 +82,7 @@
     "118": {
         "name": "Shop D zone",
         "walkable": true,
-        "traffic": 90,
+        "traffic": 45,
         "wait": {
             "type": "time",
             "min": 15,
@@ -93,7 +93,7 @@
         "name": "Shop D zone",
         "_comment": "'Traffic' refers to the number of seconds between two people arriving at this location, on average.",
         "walkable": true,
-        "traffic": 120,
+        "traffic": 100,
         "wait": {
             "type": "time",
             "min": 20,
@@ -103,7 +103,7 @@
     "113": {
         "name": "Shop F zone",
         "walkable": true,
-        "traffic": 240,
+        "traffic": 120,
         "wait": {
             "type": "time",
             "min": 10,
@@ -123,7 +123,7 @@
     "111": {
         "name": "Shop H zone",
         "walkable": true,
-        "traffic": 90,
+        "traffic": 70,
         "wait": {
             "type": "time",
             "min": 10,

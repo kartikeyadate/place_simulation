@@ -482,19 +482,6 @@ class Move {
     return steer
   }
 
-  getSeeingDistance () {
-    const base = pixelsPerMeter
-    const scale = map(
-      this.person.velocity.mag(),
-      this.person.minSpeed,
-      this.person.maxSpeed,
-      2,
-      6,
-      true
-    )
-    return base * scale
-  }
-
   _pruneLineOfSight (vecs) {
     if (vecs.length <= 2) return vecs
     const pruned = [vecs[0]]

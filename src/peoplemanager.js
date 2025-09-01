@@ -19,73 +19,72 @@ class PeopleManager {
     this.initAgents(num)
   }
 
-updateAllPerceptions () {
-  this.populate_qtree()
-  for (let p of this.persons) {
-    // --- Update cone geometry ---
-    let c = p.perceptionCone
-    c.x = p.position.x
-    c.y = p.position.y
-    if (p.activity?.state === "MOVING") {
-      c.angle = p.update_heading(c) // freeze heading if not moving
-    }
-    c.dir = createVector(cos(c.angle), sin(c.angle))
-    c.cosFov = cos(c.fov)
-    c.rSquared = c.r * c.r
-
-    // --- Update circle geometry ---
-    let circ = p.perceptionCircle
-    circ.x = p.position.x
-    circ.y = p.position.y
-    circ.rSquared = circ.r * circ.r
-
-    // --- Reset perception buckets ---
-    p.currentlyPerceivedThings.dynamic = []
-    p.currentlyPerceivedThings.targets = []
-    p.currentlyPerceivedThings.onPath = []
-    p.currentlyPerceivedThings.withinCircle = [] // 👈 nearby persons when waiting/meeting
-
-    // --- Path lookup cache ---
-    let pathSet = new Set()
-    if (p.activity?.currentMove?.path) {
-      for (let wp of p.activity.currentMove.path) {
-        pathSet.add(`${floor(wp.x)},${floor(wp.y)}`)
+  updateAllPerceptions () {
+    this.populate_qtree()
+    for (let p of this.persons) {
+      // --- Update cone geometry ---
+      let c = p.perceptionCone
+      c.x = p.position.x
+      c.y = p.position.y
+      if (p.activity?.state === 'MOVING') {
+        c.angle = p.update_heading(c) // freeze heading if not moving
       }
-    }
+      c.dir = createVector(cos(c.angle), sin(c.angle))
+      c.cosFov = cos(c.fov)
+      c.rSquared = c.r * c.r
 
-    // --- Query quadtree once using cone's bounding box ---
-    let hits = this.spaceManager.qt.query(c) || []
-    for (let h of hits) {
-      if (!h?.userData) continue
-      let obj = h.userData
-      if (obj === p) continue
+      // --- Update circle geometry ---
+      let circ = p.perceptionCircle
+      circ.x = p.position.x
+      circ.y = p.position.y
+      circ.rSquared = circ.r * circ.r
 
-      // Cone-based perception
-      if (obj instanceof Person) {
-        p.currentlyPerceivedThings.dynamic.push(obj)
+      // --- Reset perception buckets ---
+      p.currentlyPerceivedThings.dynamic = []
+      p.currentlyPerceivedThings.targets = []
+      p.currentlyPerceivedThings.onPath = []
+      p.currentlyPerceivedThings.withinCircle = [] // 👈 nearby persons when waiting/meeting
 
-        // 🔄 Circle-based perception (only Persons matter here)
-        const dx = p.position.x - obj.position.x
-        const dy = p.position.y - obj.position.y
-        const dSq = dx * dx + dy * dy
-        if (dSq < circ.rSquared) {
-          p.currentlyPerceivedThings.withinCircle.push(obj)
+      // --- Path lookup cache ---
+      let pathSet = new Set()
+      if (p.activity?.currentMove?.path) {
+        for (let wp of p.activity.currentMove.path) {
+          pathSet.add(`${floor(wp.x)},${floor(wp.y)}`)
         }
-      } else if (obj instanceof Location) {
-        p.currentlyPerceivedThings.targets.push(obj)
       }
 
-      // Path membership check
-      if (obj.waypoint) {
-        let key = `${floor(obj.waypoint.x)},${floor(obj.waypoint.y)}`
-        if (pathSet.has(key)) {
-          p.currentlyPerceivedThings.onPath.push(obj)
+      // --- Query quadtree once using cone's bounding box ---
+      let hits = this.spaceManager.qt.query(c) || []
+      for (let h of hits) {
+        if (!h?.userData) continue
+        let obj = h.userData
+        if (obj === p) continue
+
+        // Cone-based perception
+        if (obj instanceof Person) {
+          p.currentlyPerceivedThings.dynamic.push(obj)
+
+          // 🔄 Circle-based perception (only Persons matter here)
+          const dx = p.position.x - obj.position.x
+          const dy = p.position.y - obj.position.y
+          const dSq = dx * dx + dy * dy
+          if (dSq < circ.rSquared) {
+            p.currentlyPerceivedThings.withinCircle.push(obj)
+          }
+        } else if (obj instanceof Location) {
+          p.currentlyPerceivedThings.targets.push(obj)
+        }
+
+        // Path membership check
+        if (obj.waypoint) {
+          let key = `${floor(obj.waypoint.x)},${floor(obj.waypoint.y)}`
+          if (pathSet.has(key)) {
+            p.currentlyPerceivedThings.onPath.push(obj)
+          }
         }
       }
     }
   }
-}
-
 
   run () {
     this.poissonSpawn()
@@ -93,7 +92,7 @@ updateAllPerceptions () {
     for (let i = this.persons.length - 1; i >= 0; i--) {
       this.persons[i].activity.run(this.obstacles)
       if (this.persons[i].activity.completed) {
-        console.log('Removing ' + this.persons[i].id)
+        //console.log('Removing ' + this.persons[i].id)
         this.persons.splice(i, 1)
       }
     }

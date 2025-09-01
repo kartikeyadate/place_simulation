@@ -50,10 +50,66 @@ class SpaceManager {
       }
     }
 
+    console.log(this.walkableSet.length)
+
     this.populate_entries_and_subgoals()
-    this.voronoi_generate_waypoints()
+    this.loadCentroidsOrGenerate(PLAN_FILE, LOCATIONS_FILE, SEED, WAYPOINTS)
+    //this.voronoi_generate_waypoints()
     this.buildGraph()
     this.makeQTree()
+  }
+
+  makeCacheKey (planFile, locationMapFile, seed, k) {
+    // Extract just base names, strip extension
+    const planBase = planFile.split('/').pop().split('.')[0]
+    const locBase = locationMapFile.split('/').pop().split('.')[0]
+
+    return `resources/centroids_${planBase}_${locBase}_seed${seed}_k${k}.json`
+  }
+
+  loadCentroidsOrGenerate (planFile, locationMapFile, seed, k) {
+    const key = this.makeCacheKey(planFile, locationMapFile, seed, k)
+
+    try {
+      // 👇 synchronous load: returns object directly if file exists
+      let data = loadJSON(key)
+      if (data && Array.isArray(data)) {
+        this.centroids = data.map(d => createVector(d.x, d.y))
+        console.log(
+          `Loaded ${this.centroids.length} cached centroids from ${key}`
+        )
+        return
+      }
+    } catch (err) {
+      // File not found or parse error: fall through to generation
+      console.log(`No cached centroids at ${key}, generating fresh.`)
+    }
+
+    // 👇 fall back to generation
+    randomSeed(seed)
+    this.voronoi_generate_waypoints()
+    this.saveCentroids(planFile, locationMapFile, seed, k)
+  }
+
+  saveCentroids (planFile, locationMapFile, seed, k) {
+    // strip path + extension → just base names
+    const planBase = planFile.replace(/^.*[\\/]/, '').replace(/\.[^/.]+$/, '')
+    const locBase = locationMapFile
+      .replace(/^.*[\\/]/, '')
+      .replace(/\.[^/.]+$/, '')
+
+    // nice clean filename
+    const fileName = `centroids_${planBase}_${locBase}_seed${seed}_k${k}.json`
+
+    // trigger download (browser will always ask you where to save it)
+    saveJSON(
+      this.centroids.map(c => ({ x: c.x, y: c.y })),
+      fileName
+    )
+
+    console.log(
+      `Downloaded "${fileName}" → please move it into /resources for next run.`
+    )
   }
 
   populate_entries_and_subgoals () {
@@ -97,12 +153,105 @@ class SpaceManager {
   }
 
   voronoi_generate_waypoints () {
+    //1. Initialize centroids. Favoring narrow corridors.
+    // --- Step A: Scan walkable pixels for corridor candidates ---
+    // --- Step A: Scan walkable pixels for corridor candidates ---
+    let corridorScores = []
+    const CLEARANCE_THRESHOLD = 60 // px (~3m)
+    for (let pixel of this.walkableSet) {
+      let minClear = Infinity
+      let dirs = [
+        createVector(1, 0),
+        createVector(-1, 0),
+        createVector(0, 1),
+        createVector(0, -1)
+      ]
+      for (let d of dirs) {
+        let dist = 0
+        let x = pixel.x,
+          y = pixel.y
+        while (dist < CLEARANCE_THRESHOLD) {
+          x += d.x
+          y += d.y
+          if (x < 0 || x >= this.img.width || y < 0 || y >= this.img.height)
+            break
+          if (this.isObstacle(x, y)) break
+          dist++
+        }
+        minClear = Math.min(minClear, dist)
+      }
+
+      if (minClear < CLEARANCE_THRESHOLD / 2) {
+        // Estimate corridor length in one axis (crude proxy)
+        let extent = 0
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            if (abs(dx) + abs(dy) !== 1) continue // 4-neighbourhood only
+            let steps = 0
+            let x = pixel.x,
+              y = pixel.y
+            while (steps < 200) {
+              // hard cap
+              x += dx
+              y += dy
+              if (x < 0 || x >= this.img.width || y < 0 || y >= this.img.height)
+                break
+              if (this.isObstacle(x, y)) break
+              steps++
+            }
+            extent = Math.max(extent, steps)
+          }
+        }
+
+        // corridor score = (tightness factor) × (extent factor)
+        let tightness = 1 / (1 + minClear) // smaller clearance → higher
+        let score = tightness * extent
+        corridorScores.push({ pixel, score })
+      }
+    }
+
+    // --- Step B: Normalize scores into centroid quota ---
+    let totalScore = corridorScores.reduce((sum, c) => sum + c.score, 0)
+    let k_uniform = floor(this.k * 0.5)
+    let k_corridor = this.k - k_uniform
+
+    this.centroids = []
+    this.colors = []
+
+    // Uniform coverage
+    for (let i = 0; i < k_uniform; i++) {
+      let randomPixel = random(this.walkableSet)
+      this.centroids.push(randomPixel)
+      this.colors.push(color(random(255), random(255), random(255)))
+    }
+
+    // Corridor-biased coverage
+    for (let i = 0; i < k_corridor; i++) {
+      let r = random() * totalScore
+      let accum = 0
+      for (let c of corridorScores) {
+        accum += c.score
+        if (r <= accum) {
+          this.centroids.push(c.pixel.copy())
+          this.colors.push(color(random(255), random(255), random(255)))
+          break
+        }
+      }
+    }
+
+    console.log(
+      `Seeded ${k_uniform} uniform + ${k_corridor} corridor-biased centroids`
+    )
+
+    /*
+    
     // 1. Initialize centroids randomly from the walkable set
     for (let i = 0; i < this.k; i++) {
       let randomPixel = random(this.walkableSet)
       this.centroids.push(randomPixel)
       this.colors.push(color(random(255), random(255), random(255)))
     }
+      */
 
     // 2. Main k-means loop
     while (true) {
