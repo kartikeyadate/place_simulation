@@ -2,7 +2,6 @@ class PeopleManager {
   constructor (spaceManager) {
     this.spaceManager = spaceManager
     this.persons = []
-    this.obstacles = []
     this.spawnRateLambda = 1 / 15
   }
 
@@ -15,7 +14,6 @@ class PeopleManager {
 
   resetAndInit (num) {
     this.persons = []
-    this.obstacles = []
     this.initAgents(num)
   }
 
@@ -88,9 +86,10 @@ class PeopleManager {
 
   run () {
     this.poissonSpawn()
+    this.commuterSpawn()
     this.updateAllPerceptions()
     for (let i = this.persons.length - 1; i >= 0; i--) {
-      this.persons[i].activity.run(this.obstacles)
+      this.persons[i].activity.run()
       if (this.persons[i].activity.completed) {
         //console.log('Removing ' + this.persons[i].id)
         this.persons.splice(i, 1)
@@ -110,6 +109,85 @@ class PeopleManager {
       person.activity?.currentMove?.showPath?.()
       person.activity?.currentMove?.showTarget?.()
     }
+  }
+
+  // --- Train arrival wave state ---
+  triggerCommuterArrival () {
+    // number of commuters for this wave
+    const n = floor(random(120, 240)) // 60–120
+    const secs = random(420, 720) // 10–15 min
+    const frames = secs * FPS
+
+    this.commuterWave = {
+      remaining: n,
+      lambdaPerSecond: n / secs,
+      framesLeft: frames
+    }
+
+    console.log(`🚆 Train arrived: ${n} commuters over ~${secs.toFixed(0)}s`)
+  }
+
+  commuterSpawn () {
+    if (!this.commuterWave) return
+
+    let w = this.commuterWave
+    if (w.framesLeft <= 0 || w.remaining <= 0) {
+      this.trainWave = null
+      return
+    }
+
+    // convert λ to per-frame probability
+    const pFrame = 1 - Math.exp(-w.lambdaPerSecond / FPS)
+
+    if (random(1) < pFrame && w.remaining > 0) {
+      this.commuter()
+      w.remaining--
+    }
+
+    w.framesLeft--
+  }
+
+  commuter () {
+    let enter_in = 'entry_two'
+    let possible_exits = [
+      'entry_one',
+      'entry_three',
+      'entry_four',
+      'entry_five'
+    ]
+    let exit_at = random(possible_exits)
+    let entryLoc, exitLoc
+    for (let loc of this.spaceManager.entryLocations) {
+      if (loc.name === exit_at) {
+        exitLoc = loc
+      }
+      if (loc.name === enter_in) {
+        entryLoc = loc
+      }
+    }
+
+    const spawnAt = random(entryLoc.pixels)
+    exitLoc.selectWeightedWaypoint()
+
+    let person = new Person(
+      spawnAt.x,
+      spawnAt.y,
+      pixelsPerMeter,
+      minShoulderCm,
+      maxShoulderCm,
+      minSpeedCmS,
+      maxSpeedCmS
+    )
+    let activities = []
+    activities.push({ type: 'move', waypoint: exitLoc.waypoint.copy() })
+
+    person.activity = new Activity(
+      person,
+      activities,
+      this.spaceManager.locationGraph
+    )
+
+    this.persons.push(person)
   }
 
   poissonSpawn () {

@@ -5,7 +5,7 @@ const WAYPOINTS = 36 // the desired number of waypoints
 const WALKABILITY_THRESHOLD = 183
 const PLAN_FILE = 'plan_alt.jpg'
 const LOCATIONS_FILE = 'location_map.json'
-const SEED = 42
+const SEED = 13
 
 //scaling pixel <-> m, and frame <-> second
 const FPS = 20

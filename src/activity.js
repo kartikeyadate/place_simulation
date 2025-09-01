@@ -1,3 +1,7 @@
+class ActivityManager {
+  //activity manager.
+}
+
 class Activity {
   constructor (person, activities, graph) {
     this.person = person
@@ -38,11 +42,11 @@ class Activity {
     }
   }
 
-  run (obstacles) {
+  run () {
     if (this.completed) return
 
     if (this.state === 'MOVING') {
-      this.currentMove.move(obstacles)
+      this.currentMove.move()
       if (this.currentMove.isFinished()) {
         this.currentActivityIndex++
         this.startNextActivity()
