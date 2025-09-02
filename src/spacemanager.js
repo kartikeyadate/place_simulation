@@ -53,62 +53,44 @@ class SpaceManager {
     console.log(this.walkableSet.length)
 
     this.populate_entries_and_subgoals()
-    this.loadCentroidsOrGenerate(PLAN_FILE, LOCATIONS_FILE, SEED, WAYPOINTS)
+    this.loadCentroidsOrGenerate()
     //this.voronoi_generate_waypoints()
     this.buildGraph()
     this.makeQTree()
   }
 
-  makeCacheKey (planFile, locationMapFile, seed, k) {
-    // Extract just base names, strip extension
-    const planBase = planFile.split('/').pop().split('.')[0]
-    const locBase = locationMapFile.split('/').pop().split('.')[0]
-
-    return `resources/centroids_${planBase}_${locBase}_seed${seed}_k${k}.json`
-  }
-
-  loadCentroidsOrGenerate (planFile, locationMapFile, seed, k) {
-    const key = this.makeCacheKey(planFile, locationMapFile, seed, k)
-
-    try {
-      // 👇 synchronous load: returns object directly if file exists
-      let data = loadJSON(key)
-      if (data && Array.isArray(data)) {
-        this.centroids = data.map(d => createVector(d.x, d.y))
-        console.log(
-          `Loaded ${this.centroids.length} cached centroids from ${key}`
+  loadCentroidsOrGenerate () {
+    if (preloadedCentroids) {
+      if (Array.isArray(preloadedCentroids)) {
+        this.centroids = preloadedCentroids.map(d => createVector(d.x, d.y))
+        this.convertCentroidsIntoLocations()
+        return
+      } else if (
+        typeof preloadedCentroids === 'object' &&
+        preloadedCentroids !== null
+      ) {
+        this.centroids = Object.values(preloadedCentroids).map(d =>
+          createVector(d.x, d.y)
         )
+        this.convertCentroidsIntoLocations()
         return
       }
-    } catch (err) {
-      // File not found or parse error: fall through to generation
-      console.log(`No cached centroids at ${key}, generating fresh.`)
     }
-
-    // 👇 fall back to generation
-    randomSeed(seed)
+    //not found → regenerate
+    console.log(`No preloaded centroids for ${key}, generating fresh.`)
+    randomSeed(SEED)
     this.voronoi_generate_waypoints()
-    this.saveCentroids(planFile, locationMapFile, seed, k)
+    this.saveCentroids()
   }
 
-  saveCentroids (planFile, locationMapFile, seed, k) {
-    // strip path + extension → just base names
-    const planBase = planFile.replace(/^.*[\\/]/, '').replace(/\.[^/.]+$/, '')
-    const locBase = locationMapFile
-      .replace(/^.*[\\/]/, '')
-      .replace(/\.[^/.]+$/, '')
-
-    // nice clean filename
-    const fileName = `centroids_${planBase}_${locBase}_seed${seed}_k${k}.json`
-
-    // trigger download (browser will always ask you where to save it)
+  saveCentroids () {
+    const fileName = getCentroidFileName()
     saveJSON(
       this.centroids.map(c => ({ x: c.x, y: c.y })),
       fileName
     )
-
     console.log(
-      `Downloaded "${fileName}" → please move it into /resources for next run.`
+      `Downloaded "${fileName}" → move it into /resources for next run.`
     )
   }
 
@@ -316,7 +298,10 @@ class SpaceManager {
     }
 
     // Convert centroids to waypoint Locations
+    this.convertCentroidsIntoLocations()
+  }
 
+  convertCentroidsIntoLocations () {
     for (let i = 0; i < this.centroids.length; i++) {
       let locName = `voronoi_wp_${i}`
 

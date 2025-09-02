@@ -22,6 +22,8 @@ let diagnosticGrid
 let running = true
 let stopButton
 let commuterTrainButton
+let manifest
+let preloadedCentroids = {}
 
 let personCountP, flashMessagePara
 let busynessSlider, busynessSliderP
@@ -38,6 +40,16 @@ let pathCheckBox
 function preload () {
   img = loadImage(`resources/${PLAN_FILE}`)
   locations = loadJSON(`resources/${LOCATIONS_FILE}`)
+  let centroidFile = getCentroidFileName()
+  preloadedCentroids = loadJSON(
+    `resources/${centroidFile}`,
+    data => {
+      preloadedCentroids = data
+    },
+    err => {
+      preloadedCentroids = null
+    }
+  )
 }
 
 function setup () {
