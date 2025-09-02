@@ -23,7 +23,7 @@ let running = true
 let stopButton
 let commuterTrainButton
 
-let personCountP
+let personCountP, flashMessagePara
 let busynessSlider, busynessSliderP
 let currentSpawnRateP
 let showHeatMap = true
@@ -67,6 +67,8 @@ function setup () {
   coordsPara.position(20, img.height + 20)
   frPara = createP('Frame rate is 0')
   frPara.position(20, img.height + 40)
+  flashMessagePara = createP(`Flash message here...`)
+  flashMessagePara.position(20, img.height + 140)
   spaceScalePara = createP(`Spatial Scale: 0 pixels per meter`)
   spaceScalePara.position(20, img.height + 100)
   timeScalePara = createP(`Time Scale: 0 frames per second`)

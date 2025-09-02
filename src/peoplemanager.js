@@ -124,7 +124,9 @@ class PeopleManager {
       framesLeft: frames
     }
 
-    console.log(`🚆 Train arrived: ${n} commuters over ~${secs.toFixed(0)}s`)
+    flashMessagePara.html(
+      `Train arrived: ${n} commuters over ~${secs.toFixed(0)}s`
+    )
   }
 
   commuterSpawn () {
