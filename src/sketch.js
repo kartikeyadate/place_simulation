@@ -1,12 +1,12 @@
 // ================================
 // sketch.js — refactored
 // The full sketch in a single file is stored locally at backups/combined.js
-// This is version 0.0.2 of a simulation of 'use'.
+// This is version 0.0.3 of a simulation of 'use'.
 // It uses a combination of local Reynolds steering behaviours
 // and global pathfinding along a voronoi tessellation of walkable areas
 // to simulate how many users might share a space.
 // Author: Kartikeya Date
-// Last Updated: August 26, 2025
+// Last Updated: September 3, 2025
 //
 // ================================
 // Global variables for the main sketch.js file
